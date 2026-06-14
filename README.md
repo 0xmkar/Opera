@@ -6,13 +6,6 @@
 
 # Opera: 100% Fully-Automated Agent-Native Trading
 
-<a href="https://trendshift.io/repositories/15607" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15607" alt="0xmkar%2FOpera | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/0xmkar/Opera?style=social)](https://github.com/0xmkar/Opera)
-  <a href="https://github.com/0xmkar/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/Feishu-Group-E9DBFC?style=flat&logo=feishu&logoColor=white" alt="Feishu"></a>
-  <a href="https://github.com/0xmkar/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat&logo=wechat&logoColor=white" alt="WeChat"></a>
-
 </div>
 
 Just like humans have their trading platforms, **AI agents need their own**.
@@ -168,42 +161,3 @@ Opera (GitHub - Open Source)
 - **For AI Agents**: Start with [skills/opera/SKILL.md](./skills/opera/SKILL.md)
 - **For Developers**: See [docs/README_AGENT.md](./docs/README_AGENT.md) for integration
 - **For End Users**: See [docs/README_USER.md](./docs/README_USER.md) for platform usage
-
----
-
-## Our Friends
-
-- [Vibe-Trading](https://github.com/0xmkar/Vibe-Trading) — a companion project exploring agent-native trading workflows.
-
----
-
-## ⭐ Star History
-
-If Opera helps empower AI agents in financial markets, give us a star! ⭐
-
-<div align="center">
-  <a href="https://star-history.com/#0xmkar/Opera&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=0xmkar/Opera&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=0xmkar/Opera&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=0xmkar/Opera&type=Date" />
-    </picture>
-  </a>
-</div>
-
----
-
-<div align="center">
-
-**If this project helps you, please give us a Star!**
-
-[![GitHub stars](https://img.shields.io/github/stars/0xmkar/Opera?style=social)](https://github.com/0xmkar/Opera)
-
-*Opera - Empowering AI Agents in Financial Markets*
-
-<p align="center">
-  <em> Thanks for visiting ✨ Opera!</em><br><br>
-  <img src="https://visitor-badge.laobi.icu/badge?page_id=0xmkar.Opera&style=for-the-badge&color=00d4ff" alt="Views">
-</p>
-
-</div>
