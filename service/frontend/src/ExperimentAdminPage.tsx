@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 
-import { API_BASE, useLanguage } from './appShared'
+import { API_BASE } from './appShared'
 
 type ExperimentAdminPageProps = {
   token?: string | null
@@ -25,7 +25,6 @@ const formatPct = (value: any) => `${Number(value || 0).toFixed(2)}%`
 const formatNumber = (value: any) => Number(value || 0).toLocaleString()
 
 export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
-  const { language } = useLanguage()
   const [experiments, setExperiments] = useState<any[]>([])
   const [selectedExperiment, setSelectedExperiment] = useState<any | null>(null)
   const [assignments, setAssignments] = useState<any[]>([])
@@ -118,7 +117,7 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
       try {
         variants = JSON.parse(formData.variants_json)
       } catch {
-        alert(language === 'zh' ? 'Variants JSON 格式错误' : 'Invalid variants JSON')
+        alert('Invalid variants JSON')
         return
       }
       const res = await fetch(`${API_BASE}/experiments`, {
@@ -143,7 +142,7 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
       await loadExperiments()
       await loadAssignments(data.experiment_key)
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '创建实验失败' : 'Failed to create experiment'))
+      alert(err?.message || ('Failed to create experiment'))
     } finally {
       setBusy(false)
     }
@@ -168,7 +167,7 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
       await loadExperiments()
       await loadAssignments(experimentKey)
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '状态更新失败' : 'Failed to update status'))
+      alert(err?.message || ('Failed to update status'))
     } finally {
       setBusy(false)
     }
@@ -229,9 +228,9 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
     <div className="experiment-page">
       <div className="header">
         <div>
-          <h1 className="header-title">{language === 'zh' ? '实验控制台' : 'Experiment Console'}</h1>
+          <h1 className="header-title">{'Experiment Console'}</h1>
           <p className="header-subtitle">
-            {language === 'zh' ? '创建分组、查看 assignment 规模和奖励机制' : 'Create assignments, inspect variant scale, and manage reward policy'}
+            {'Create assignments, inspect variant scale, and manage reward policy'}
           </p>
         </div>
       </div>
@@ -239,13 +238,13 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
       <div className="experiment-grid">
         <section className="experiment-panel experiment-panel-main">
           <div className="experiment-section-header">
-            <h2>{language === 'zh' ? '实验列表' : 'Experiments'}</h2>
-            <button className="btn btn-ghost" onClick={loadExperiments}>{language === 'zh' ? '刷新' : 'Refresh'}</button>
+            <h2>{'Experiments'}</h2>
+            <button className="btn btn-ghost" onClick={loadExperiments}>{'Refresh'}</button>
           </div>
           {loading ? (
             <div className="loading"><div className="spinner"></div></div>
           ) : experiments.length === 0 ? (
-            <div className="empty-state"><div className="empty-title">{language === 'zh' ? '暂无实验' : 'No experiments yet'}</div></div>
+            <div className="empty-state"><div className="empty-title">{'No experiments yet'}</div></div>
           ) : (
             <div className="experiment-list">
               {experiments.map((experiment) => (
@@ -268,10 +267,10 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
                   {token && (
                     <div className="experiment-actions">
                       <button className="btn btn-secondary" disabled={busy} onClick={() => updateStatus(experiment.experiment_key, experiment.status === 'active' ? 'paused' : 'active')}>
-                        {experiment.status === 'active' ? (language === 'zh' ? '暂停' : 'Pause') : (language === 'zh' ? '启动' : 'Start')}
+                        {experiment.status === 'active' ? ('Pause') : ('Start')}
                       </button>
                       <button className="btn btn-ghost" onClick={() => loadAssignments(experiment.experiment_key)}>
-                        {language === 'zh' ? '分组' : 'Assignments'}
+                        {'Assignments'}
                       </button>
                     </div>
                   )}
@@ -282,10 +281,10 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
         </section>
 
         <aside className="experiment-panel">
-          <div className="experiment-section-header"><h2>{language === 'zh' ? '创建实验' : 'Create Experiment'}</h2></div>
+          <div className="experiment-section-header"><h2>{'Create Experiment'}</h2></div>
           {token ? (
             <form className="experiment-form" onSubmit={handleCreate}>
-              <input className="form-input" value={formData.title} onChange={(event) => setFormData({ ...formData, title: event.target.value })} placeholder={language === 'zh' ? '实验标题' : 'Experiment title'} required />
+              <input className="form-input" value={formData.title} onChange={(event) => setFormData({ ...formData, title: event.target.value })} placeholder={'Experiment title'} required />
               <input className="form-input" value={formData.experiment_key} onChange={(event) => setFormData({ ...formData, experiment_key: event.target.value })} placeholder="experiment-key" />
               <div className="experiment-form-row">
                 <select className="form-select" value={formData.status} onChange={(event) => setFormData({ ...formData, status: event.target.value })}>
@@ -302,10 +301,10 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
                 <input className="form-input" type="datetime-local" value={formData.end_at} onChange={(event) => setFormData({ ...formData, end_at: event.target.value })} />
               </div>
               <textarea className="form-textarea experiment-json" value={formData.variants_json} onChange={(event) => setFormData({ ...formData, variants_json: event.target.value })} />
-              <button className="btn btn-primary" disabled={busy} type="submit">{language === 'zh' ? '保存实验' : 'Save experiment'}</button>
+              <button className="btn btn-primary" disabled={busy} type="submit">{'Save experiment'}</button>
             </form>
           ) : (
-            <div className="empty-state"><div className="empty-title">{language === 'zh' ? '登录后可创建实验' : 'Login to create experiments'}</div></div>
+            <div className="empty-state"><div className="empty-title">{'Login to create experiments'}</div></div>
           )}
         </aside>
       </div>
@@ -313,7 +312,7 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
       {token && (
         <section className="experiment-panel">
           <div className="experiment-section-header">
-            <h2>{language === 'zh' ? '实验通知' : 'Experiment Notifications'}</h2>
+            <h2>{'Experiment Notifications'}</h2>
             <span className="experiment-badge">{notificationPreview?.campaign_id || 'dry-run first'}</span>
           </div>
           <form
@@ -330,7 +329,7 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
                 onChange={(event) => setNotificationForm({ ...notificationForm, experiment_key: event.target.value, variant_key: '' })}
                 required
               >
-                <option value="">{language === 'zh' ? '选择实验' : 'Select experiment'}</option>
+                <option value="">{'Select experiment'}</option>
                 {experiments.map((experiment) => (
                   <option key={experiment.experiment_key} value={experiment.experiment_key}>{experiment.title || experiment.experiment_key}</option>
                 ))}
@@ -340,7 +339,7 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
                 value={notificationForm.variant_key}
                 onChange={(event) => setNotificationForm({ ...notificationForm, variant_key: event.target.value })}
               >
-                <option value="">{language === 'zh' ? '全部 variant' : 'All variants'}</option>
+                <option value="">{'All variants'}</option>
                 {notificationVariants.map((variant: any) => (
                   <option key={variant.key} value={variant.key}>{variant.key}</option>
                 ))}
@@ -417,10 +416,10 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
             </div>
             <div className="experiment-actions">
               <button className="btn btn-secondary" type="button" disabled={notificationBusy} onClick={() => submitNotification(true)}>
-                {language === 'zh' ? 'Dry run 预览' : 'Dry run preview'}
+                {'Dry run preview'}
               </button>
               <button className="btn btn-primary" type="submit" disabled={notificationBusy || notificationForm.dry_run}>
-                {language === 'zh' ? '确认发送' : 'Confirm send'}
+                {'Confirm send'}
               </button>
             </div>
           </form>
@@ -451,13 +450,13 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
                 <strong>{row.agent_count || row.count}</strong>
                 {row.quality_score_avg !== undefined && (
                   <small>
-                    {language === 'zh' ? '收益' : 'Return'} {Number(row.return_pct_avg || 0).toFixed(2)}%
+                    {'Return'} {Number(row.return_pct_avg || 0).toFixed(2)}%
                     {' · '}
-                    {language === 'zh' ? '回撤' : 'DD'} {Number(row.max_drawdown_avg || 0).toFixed(2)}%
+                    {'DD'} {Number(row.max_drawdown_avg || 0).toFixed(2)}%
                     {' · '}
-                    {language === 'zh' ? '交易' : 'Trades'} {Number(row.trade_count || 0)}
+                    {'Trades'} {Number(row.trade_count || 0)}
                     {' · '}
-                    {language === 'zh' ? '质量' : 'Quality'} {Number(row.quality_score_avg || 0).toFixed(2)}
+                    {'Quality'} {Number(row.quality_score_avg || 0).toFixed(2)}
                   </small>
                 )}
               </div>
@@ -470,18 +469,18 @@ export function ExperimentAdminPage({ token }: ExperimentAdminPageProps) {
                   <div className="experiment-challenge-title">
                     <strong>{item.challenge.title}</strong>
                     <span>{item.challenge.challenge_key}</span>
-                    <span>{item.provisional ? (language === 'zh' ? '实时口径' : 'Live marks') : (language === 'zh' ? '已结算' : 'Settled')}</span>
+                    <span>{item.provisional ? ('Live marks') : ('Settled')}</span>
                   </div>
                   <div className="experiment-challenge-table">
                     <div className="experiment-challenge-row experiment-challenge-row-head">
                       <span>Variant</span>
-                      <span>{language === 'zh' ? '分配' : 'Assigned'}</span>
-                      <span>{language === 'zh' ? '参赛' : 'Joined'}</span>
-                      <span>{language === 'zh' ? '交易人数' : 'Traders'}</span>
-                      <span>{language === 'zh' ? '交易' : 'Trades'}</span>
-                      <span>{language === 'zh' ? '平均收益' : 'Avg return'}</span>
-                      <span>{language === 'zh' ? '最佳收益' : 'Best return'}</span>
-                      <span>{language === 'zh' ? '平均回撤' : 'Avg DD'}</span>
+                      <span>{'Assigned'}</span>
+                      <span>{'Joined'}</span>
+                      <span>{'Traders'}</span>
+                      <span>{'Trades'}</span>
+                      <span>{'Avg return'}</span>
+                      <span>{'Best return'}</span>
+                      <span>{'Avg DD'}</span>
                     </div>
                     {item.variant_summary.map((row: any) => (
                       <div key={`${item.challenge.challenge_key}-${row.variant_key}`} className="experiment-challenge-row">

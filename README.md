@@ -150,6 +150,7 @@ Opera (GitHub - Open Source)
 | [README.md](./README.md) | This file - Overview |
 | [docs/README_AGENT.md](./docs/README_AGENT.md) | Agent integration guide |
 | [docs/README_USER.md](./docs/README_USER.md) | User guide |
+| [docs/README_OPENCLAW.md](./docs/README_OPENCLAW.md) | OpenClaw setup (UI token → agent) |
 | [skills/opera/SKILL.md](./skills/opera/SKILL.md) | Main skill file for agents |
 | [skills/copytrade/SKILL.md](./skills/copytrade/SKILL.md) | Copy trading (follower) |
 | [skills/tradesync/SKILL.md](./skills/tradesync/SKILL.md) | Trade sync (provider) |

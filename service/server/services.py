@@ -1,7 +1,7 @@
 """
 Services Module
 
-业务逻辑服务层
+Business logic service layer.
 """
 
 import json

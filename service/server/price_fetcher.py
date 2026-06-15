@@ -1,8 +1,8 @@
 """
 Stock Price Fetcher for Server
 
-US Stock: 从 Alpha Vantage 获取价格
-Crypto: 从 Hyperliquid 获取价格（停止使用 Alpha Vantage crypto 端点）
+US Stock: fetch prices from Alpha Vantage
+Crypto: fetch prices from Hyperliquid (Alpha Vantage crypto endpoints are no longer used)
 """
 
 import os
@@ -38,8 +38,22 @@ PRICE_FETCH_ERROR_COOLDOWN_SECONDS = max(0.0, float(os.environ.get("PRICE_FETCH_
 PRICE_FETCH_RATE_LIMIT_COOLDOWN_SECONDS = max(0.0, float(os.environ.get("PRICE_FETCH_RATE_LIMIT_COOLDOWN_SECONDS", "60")))
 PRICE_FETCH_VERBOSE = os.environ.get("PRICE_FETCH_VERBOSE", "true").strip().lower() not in {"0", "false", "no", "off"}
 HYPERLIQUID_SYMBOL_CACHE_TTL_SECONDS = max(60.0, float(os.environ.get("HYPERLIQUID_SYMBOL_CACHE_TTL_SECONDS", "300")))
+BYREAL_API_BASE_URL = os.environ.get("BYREAL_API_BASE_URL", "https://api2.byreal.io/byreal/api").strip().rstrip("/")
+BYREAL_USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+BYREAL_TOKEN_MINTS: Dict[str, str] = {
+    "SOL": "So11111111111111111111111111111111111111112",
+    "USDC": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "USDT": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    "MNT": "4SoQ8UkWfeDH47T56PA53CZCeW4KytYCiU65CwBWoJUt",
+}
+BYREAL_TOKEN_DECIMALS: Dict[str, int] = {
+    "SOL": 9,
+    "USDC": 6,
+    "USDT": 6,
+    "MNT": 9,
+}
 
-# 时区常量
+# Timezone constants
 UTC = timezone.utc
 # ET_TZ resolves to America/New_York (DST-aware) when zoneinfo is available.
 # Falling back to a fixed UTC-5 (EST) offset is conservative — it will be 1 hour
@@ -674,6 +688,52 @@ def _get_hyperliquid_candle_close(symbol: str, executed_at: str) -> Optional[flo
     return float(f"{closest:.6f}")
 
 
+def _get_byreal_price(symbol: str) -> Optional[float]:
+    """
+    Fetch USD price via Byreal router quote API (1 unit -> USDC).
+    Falls back gracefully when API is unreachable.
+    """
+    sym = (symbol or "").strip().upper()
+    if not sym:
+        return None
+    if sym == "USDC":
+        return 1.0
+    mint = BYREAL_TOKEN_MINTS.get(sym)
+    decimals = BYREAL_TOKEN_DECIMALS.get(sym, 9)
+    if not mint:
+        return None
+
+    router_url = f"{BYREAL_API_BASE_URL}/router/v1/router-service/swap"
+    payload = {
+        "inputMint": mint,
+        "outputMint": BYREAL_USDC_MINT,
+        "amount": str(10 ** decimals),
+        "swapMode": "in",
+        "slippageBps": "10",
+        "computeUnitPriceMicroLamports": "50000",
+        "quoteOnly": "true",
+    }
+    try:
+        response = requests.post(router_url, json=payload, timeout=PRICE_FETCH_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        data = response.json()
+        if isinstance(data, dict) and data.get("success") is False:
+            return None
+        body = data.get("data") if isinstance(data, dict) else data
+        if not isinstance(body, dict):
+            body = data if isinstance(data, dict) else {}
+        out_amount = body.get("outAmount") or body.get("uiOutAmount")
+        if out_amount is None:
+            return None
+        usd = float(out_amount) / (10 ** BYREAL_TOKEN_DECIMALS.get("USDC", 6))
+        if usd <= 0:
+            return None
+        return float(f"{usd:.6f}")
+    except Exception as exc:
+        _price_log(f"[Price API] Byreal quote failed for {sym}: {exc}")
+        return None
+
+
 def get_price_from_market(
     symbol: str,
     executed_at: str,
@@ -682,15 +742,15 @@ def get_price_from_market(
     outcome: Optional[str] = None,
 ) -> Optional[float]:
     """
-    根据市场获取价格
+    Fetch a price for the given market.
 
     Args:
-        symbol: 股票代码
-        executed_at: 执行时间 (ISO 8601 格式)
-        market: 市场类型 (us-stock, crypto)
+        symbol: ticker symbol
+        executed_at: execution timestamp (ISO 8601)
+        market: market type (us-stock, crypto)
 
     Returns:
-        查询到的价格，如果失败返回 None
+        The fetched price, or None on failure.
     """
     try:
         try:
@@ -701,9 +761,10 @@ def get_price_from_market(
             market = (market or "").strip().lower()
 
         if market == "crypto":
-            # Crypto pricing now uses Hyperliquid public endpoints.
-            # Try historical candle (when executed_at is provided), then fall back to mid price.
+            # Crypto: Hyperliquid first, Byreal router quote as fallback (e.g. MNT).
             price = _get_hyperliquid_candle_close(symbol, executed_at) or _get_hyperliquid_mid_price(symbol)
+            if price is None:
+                price = _get_byreal_price(symbol)
         elif market == "polymarket":
             # Polymarket pricing uses public Gamma + CLOB endpoints.
             # We use the current orderbook mid price (paper trading).
@@ -851,12 +912,12 @@ def _get_yfinance_us_stock_price(symbol: str, executed_at: str) -> Optional[floa
 
 
 def _get_us_stock_price(symbol: str, executed_at: str) -> Optional[float]:
-    """获取美股价格"""
-    # Alpha Vantage TIME_SERIES_INTRADAY 返回美国东部时间 (ET)
+    """Fetch a US stock price."""
+    # Alpha Vantage TIME_SERIES_INTRADAY returns US Eastern Time (ET)
     try:
-        # 先解析为 UTC
+        # Parse as UTC first
         dt_utc = datetime.fromisoformat(executed_at.replace('Z', '')).replace(tzinfo=UTC)
-        # 转换为东部时间 (ET)
+        # Convert to Eastern Time (ET)
         dt_et = dt_utc.astimezone(ET_TZ)
     except ValueError:
         return None
@@ -899,14 +960,14 @@ def _get_us_stock_price(symbol: str, executed_at: str) -> Optional[float]:
             return None
 
         time_series = data[time_series_key]
-        # 使用东部时间进行比较
+        # Compare using Eastern Time
         target_datetime = dt_et.strftime("%Y-%m-%d %H:%M:%S")
 
-        # 精确匹配
+        # Exact match
         if target_datetime in time_series:
             return float(time_series[target_datetime].get("4. close", 0))
 
-        # 找最接近的之前的数据
+        # Find the closest prior bar
         min_diff = float('inf')
         closest_price = None
 
@@ -930,6 +991,6 @@ def _get_us_stock_price(symbol: str, executed_at: str) -> Optional[float]:
 def _get_crypto_price(symbol: str, executed_at: str) -> Optional[float]:
     """
     Backwards-compat shim.
-    Opera 已停止使用 Alpha Vantage 的 crypto 端点；此函数保留仅为避免旧代码引用时报错。
+    Opera no longer uses Alpha Vantage crypto endpoints; this function remains for legacy imports.
     """
     return _get_hyperliquid_candle_close(symbol, executed_at) or _get_hyperliquid_mid_price(symbol)

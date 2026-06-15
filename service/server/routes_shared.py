@@ -89,6 +89,9 @@ MARKET_ALIASES = {
     'etf': 'us-stock',
     'equity': 'us-stock',
     'equities': 'us-stock',
+    'byreal': 'crypto',
+    'realclaw': 'crypto',
+    'solana': 'crypto',
 }
 
 

@@ -71,6 +71,7 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
         offset: int = 0,
         include_history: bool = True,
         metric: str = 'return',
+        source: str | None = None,
     ):
         days = max(1, min(days, 365))
         limit = max(1, min(limit, 50))
@@ -78,13 +79,15 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
         metric = (metric or 'return').strip().lower()
         if metric not in {'return', 'drawdown', 'risk', 'collaboration', 'quality'}:
             metric = 'return'
+        source_filter = (source or '').strip().lower() or None
 
-        cache_key = (limit, days, offset, include_history, metric)
+        cache_key = (limit, days, offset, include_history, metric, source_filter)
         now_ts = time.time()
         redis_cache_key = (
             f'{LEADERBOARD_CACHE_KEY_PREFIX}:'
             f'v=identity-1:'
             f'metric={metric}:'
+            f'source={source_filter or "all"}:'
             f'limit={limit}:days={days}:offset={offset}:history={int(include_history)}'
         )
 
@@ -103,17 +106,26 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
         cutoff_dt = datetime.now(timezone.utc) - timedelta(days=days)
         cutoff = cutoff_dt.isoformat().replace('+00:00', 'Z')
         live_snapshot_recorded_at = utc_now_iso_z()
+        byreal_filter_sql = ''
+        if source_filter == 'byreal':
+            byreal_filter_sql = """
+                AND EXISTS (
+                    SELECT 1 FROM byreal_trade_links btl
+                    WHERE btl.agent_id = a.id
+                )
+            """
 
         cursor.execute(
-            """
+            f"""
             SELECT COUNT(*) AS total
-            FROM agents
+            FROM agents a
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM agent_leaderboard_exclusions ale
-                WHERE ale.agent_id = agents.id
+                WHERE ale.agent_id = a.id
                   AND COALESCE(ale.active, 1) = 1
             )
+            {byreal_filter_sql}
             """
         )
         total_row = cursor.fetchone()
@@ -192,6 +204,7 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
                  AND COALESCE(ale.active, 1) = 1
                 LEFT JOIN positions p ON p.agent_id = a.id
                 WHERE ale.agent_id IS NULL
+                {byreal_filter_sql}
                 GROUP BY a.id, a.name, a.identity_status, a.cash, a.deposited, ale.reason
             )
             SELECT

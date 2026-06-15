@@ -1,10 +1,10 @@
 """
 Market intelligence snapshots and read models.
 
-第一阶段先实现统一的金融新闻聚合快照：
-- 后台统一从 Alpha Vantage NEWS_SENTIMENT 拉取
-- 存入本地快照表
-- 前端和 API 只读消费快照
+Phase 1 provides a unified financial news aggregation snapshot:
+- Background jobs pull from Alpha Vantage NEWS_SENTIMENT
+- Results are stored in local snapshot tables
+- Frontend and API consumers read snapshots only
 """
 
 from __future__ import annotations
@@ -78,30 +78,22 @@ ADANOS_STOCK_SENTIMENT_PLATFORMS = ("reddit", "x", "news", "polymarket")
 NEWS_CATEGORY_DEFINITIONS: dict[str, dict[str, str]] = {
     "equities": {
         "label": "Equities",
-        "label_zh": "股票",
         "description": "Stocks, ETFs, and company market developments.",
-        "description_zh": "股票、ETF 与公司市场动态。",
         "topics": "financial_markets",
     },
     "macro": {
         "label": "Macro",
-        "label_zh": "宏观",
         "description": "Macro regime, policy, and broad economic context.",
-        "description_zh": "宏观环境、政策与整体经济背景。",
         "topics": "economy_macro",
     },
     "crypto": {
         "label": "Crypto",
-        "label_zh": "加密",
         "description": "Crypto market headlines anchored on BTC and ETH.",
-        "description_zh": "围绕 BTC 和 ETH 的加密市场新闻。",
         "tickers": "CRYPTO:BTC,CRYPTO:ETH",
     },
     "commodities": {
         "label": "Commodities",
-        "label_zh": "商品",
         "description": "Energy, transport, and commodity-linked events.",
-        "description_zh": "能源、运输与商品链路事件。",
         "topics": "energy_transportation",
     },
 }
@@ -873,11 +865,9 @@ def _macro_news_tone_signal() -> dict[str, Any]:
         return {
             "id": "macro_news_tone",
             "label": "Macro news tone",
-            "label_zh": "宏观新闻语气",
             "status": "neutral",
             "value": None,
             "explanation": "Macro news snapshot is not available yet.",
-            "explanation_zh": "宏观新闻快照暂未生成。",
             "source": "market_news_snapshots",
         }
 
@@ -896,24 +886,19 @@ def _macro_news_tone_signal() -> dict[str, Any]:
     if tone_score >= 2:
         status = "bullish"
         explanation = "Macro news flow leans constructive."
-        explanation_zh = "宏观新闻整体偏积极。"
     elif tone_score <= -2:
         status = "defensive"
         explanation = "Macro news flow leans defensive."
-        explanation_zh = "宏观新闻整体偏防御。"
     else:
         status = "neutral"
         explanation = "Macro news flow is mixed."
-        explanation_zh = "宏观新闻整体偏中性。"
 
     return {
         "id": "macro_news_tone",
         "label": "Macro news tone",
-        "label_zh": "宏观新闻语气",
         "status": status,
         "value": tone_score,
         "explanation": explanation,
-        "explanation_zh": explanation_zh,
         "source": "market_news_snapshots",
         "as_of": snapshot.get("created_at"),
     }
@@ -968,20 +953,16 @@ def _build_etf_flow_snapshot() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if inflow_count >= outflow_count + 2 and net_score > 0:
         direction = "inflow"
         summary_text = "Estimated BTC ETF flow leans positive."
-        summary_text_zh = "估算的 BTC ETF 资金方向整体偏流入。"
     elif outflow_count >= inflow_count + 2 and net_score < 0:
         direction = "outflow"
         summary_text = "Estimated BTC ETF flow leans negative."
-        summary_text_zh = "估算的 BTC ETF 资金方向整体偏流出。"
     else:
         direction = "mixed"
         summary_text = "Estimated BTC ETF flow is mixed."
-        summary_text_zh = "估算的 BTC ETF 资金方向分化。"
 
     summary = {
         "direction": direction,
         "summary": summary_text,
-        "summary_zh": summary_text_zh,
         "inflow_count": inflow_count,
         "outflow_count": outflow_count,
         "tracked_count": len(etf_rows),
@@ -1116,25 +1097,20 @@ def _build_macro_signals() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if btc_return >= 4:
             status = "bullish"
             explanation = "BTC momentum remains positive over the last week."
-            explanation_zh = "BTC 最近一周动量偏强。"
         elif btc_return <= -4:
             status = "defensive"
             explanation = "BTC weakened materially over the last week."
-            explanation_zh = "BTC 最近一周明显走弱。"
         else:
             status = "neutral"
             explanation = "BTC momentum is mixed."
-            explanation_zh = "BTC 动量偏中性。"
         signals.append({
             "id": "btc_trend",
             "label": "BTC trend",
-            "label_zh": "BTC 趋势",
             "status": status,
             "value": round(btc_return, 2),
             "unit": "%",
             "lookback_days": BTC_MACRO_LOOKBACK_DAYS,
             "explanation": explanation,
-            "explanation_zh": explanation_zh,
             "source": "DIGITAL_CURRENCY_DAILY",
             "as_of": btc_series[0]["date"],
         })
@@ -1143,25 +1119,20 @@ def _build_macro_signals() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if qqq_return >= 3:
             status = "bullish"
             explanation = "Growth equities are trending higher."
-            explanation_zh = "成长股整体趋势向上。"
         elif qqq_return <= -3:
             status = "defensive"
             explanation = "Growth equities are losing momentum."
-            explanation_zh = "成长股动量明显转弱。"
         else:
             status = "neutral"
             explanation = "Growth equity momentum is mixed."
-            explanation_zh = "成长股动量偏中性。"
         signals.append({
             "id": "qqq_trend",
             "label": "QQQ trend",
-            "label_zh": "QQQ 趋势",
             "status": status,
             "value": round(qqq_return, 2),
             "unit": "%",
             "lookback_days": MACRO_SIGNAL_LOOKBACK_DAYS,
             "explanation": explanation,
-            "explanation_zh": explanation_zh,
             "source": "TIME_SERIES_DAILY_ADJUSTED",
             "as_of": qqq_series[0]["date"],
         })
@@ -1171,25 +1142,20 @@ def _build_macro_signals() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if spread >= 2:
             status = "bullish"
             explanation = "Growth is outperforming defensive staples."
-            explanation_zh = "成长板块显著跑赢防御消费。"
         elif spread <= -2:
             status = "defensive"
             explanation = "Defensive staples are outperforming growth."
-            explanation_zh = "防御消费跑赢成长板块。"
         else:
             status = "neutral"
             explanation = "Growth and defensive sectors are balanced."
-            explanation_zh = "成长与防御板块相对均衡。"
         signals.append({
             "id": "qqq_vs_xlp",
             "label": "QQQ vs XLP",
-            "label_zh": "QQQ 相对 XLP",
             "status": status,
             "value": round(spread, 2),
             "unit": "spread_pct",
             "lookback_days": MACRO_SIGNAL_LOOKBACK_DAYS,
             "explanation": explanation,
-            "explanation_zh": explanation_zh,
             "source": "TIME_SERIES_DAILY_ADJUSTED",
             "as_of": qqq_series[0]["date"],
         })
@@ -1199,25 +1165,20 @@ def _build_macro_signals() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if safe_haven_strength >= 3:
             status = "defensive"
             explanation = "Safe-haven assets are bid."
-            explanation_zh = "避险资产出现明显走强。"
         elif safe_haven_strength <= 0:
             status = "bullish"
             explanation = "Safe-haven demand is subdued."
-            explanation_zh = "避险需求偏弱。"
         else:
             status = "neutral"
             explanation = "Safe-haven demand is present but not dominant."
-            explanation_zh = "避险需求存在，但并不极端。"
         signals.append({
             "id": "safe_haven_pressure",
             "label": "Safe-haven pressure",
-            "label_zh": "避险压力",
             "status": status,
             "value": round(safe_haven_strength, 2),
             "unit": "%",
             "lookback_days": MACRO_SIGNAL_LOOKBACK_DAYS,
             "explanation": explanation,
-            "explanation_zh": explanation_zh,
             "source": "TIME_SERIES_DAILY_ADJUSTED",
             "as_of": gld_series[0]["date"],
         })
@@ -1231,19 +1192,15 @@ def _build_macro_signals() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if bullish_count >= defensive_count + 2:
         verdict = "bullish"
         summary = "Risk appetite is leading across the current macro snapshot."
-        summary_zh = "当前宏观快照整体偏向风险偏好。"
     elif defensive_count >= bullish_count + 2:
         verdict = "defensive"
         summary = "Defensive pressure dominates the current macro snapshot."
-        summary_zh = "当前宏观快照整体偏向防御。"
     else:
         verdict = "neutral"
         summary = "Macro signals are mixed and do not show a clear regime."
-        summary_zh = "当前宏观信号分化，尚未形成明确主导方向。"
 
     meta = {
         "summary": summary,
-        "summary_zh": summary_zh,
         "defensive_count": defensive_count,
         "latest_prices": {
             "BTC": btc_series[0]["close"] if btc_series else None,
@@ -1791,9 +1748,7 @@ def get_market_news_payload(category: Optional[str] = None, limit: int = 5) -> d
             sections.append({
                 "category": category_key,
                 "label": definition["label"],
-                "label_zh": definition["label_zh"],
                 "description": definition["description"],
-                "description_zh": definition["description_zh"],
                 "items": [],
                 "summary": {
                     "category": category_key,
@@ -1808,9 +1763,7 @@ def get_market_news_payload(category: Optional[str] = None, limit: int = 5) -> d
         sections.append({
             "category": category_key,
             "label": definition["label"],
-            "label_zh": definition["label_zh"],
             "description": definition["description"],
-            "description_zh": definition["description_zh"],
             "items": (snapshot["items"] or [])[: normalized_limit],
             "summary": snapshot["summary"],
             "created_at": snapshot["created_at"],
@@ -1881,10 +1834,8 @@ def get_market_intel_overview() -> dict[str, Any]:
         "macro_bullish_count": macro_payload.get("bullish_count", 0),
         "macro_total_count": macro_payload.get("total_count", 0),
         "macro_summary": (macro_payload.get("meta") or {}).get("summary"),
-        "macro_summary_zh": (macro_payload.get("meta") or {}).get("summary_zh"),
         "etf_direction": (etf_payload.get("summary") or {}).get("direction"),
         "etf_summary": (etf_payload.get("summary") or {}).get("summary"),
-        "etf_summary_zh": (etf_payload.get("summary") or {}).get("summary_zh"),
         "etf_tracked_count": (etf_payload.get("summary") or {}).get("tracked_count", 0),
         "featured_stock_count": len([item for item in stock_payload.get("items", []) if item.get("available")]),
         "news_status": news_status,
@@ -1897,7 +1848,6 @@ def get_market_intel_overview() -> dict[str, Any]:
             {
                 "category": section["category"],
                 "label": section["label"],
-                "label_zh": section["label_zh"],
                 "activity_level": (section.get("summary") or {}).get("activity_level", "quiet"),
                 "item_count": (section.get("summary") or {}).get("item_count", 0),
                 "top_headline": (section.get("summary") or {}).get("top_headline"),

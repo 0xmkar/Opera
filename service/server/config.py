@@ -1,7 +1,7 @@
 """
 Configuration Module
 
-配置和环境变量加载
+Configuration and environment variable loading.
 """
 
 import os
@@ -43,3 +43,12 @@ REPLY_PUBLISH_REWARD = 2       # Points for replying to a strategy/discussion
 
 # Environment
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# Byreal / RealClaw integration
+BYREAL_CLI_PATH = os.getenv("BYREAL_CLI_PATH", "byreal-cli").strip() or "byreal-cli"
+BYREAL_PERPS_CLI_PATH = os.getenv("BYREAL_PERPS_CLI_PATH", "byreal-perps-cli").strip() or "byreal-perps-cli"
+BYREAL_API_BASE_URL = os.getenv("BYREAL_API_BASE_URL", "https://api2.byreal.io/byreal/api").strip().rstrip("/")
+BYREAL_WALLET_ENCRYPTION_KEY = os.getenv("BYREAL_WALLET_ENCRYPTION_KEY", "").strip()
+BYREAL_AGENT_RUN_TIMEOUT_SECONDS = int(os.getenv("BYREAL_AGENT_RUN_TIMEOUT_SECONDS", "120"))
+BYREAL_MAX_REAL_NOTIONAL_USD = float(os.getenv("BYREAL_MAX_REAL_NOTIONAL_USD", "1000"))
+BYREAL_AGENT_WORKER_INTERVAL = int(os.getenv("BYREAL_AGENT_WORKER_INTERVAL", "5"))

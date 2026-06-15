@@ -27,9 +27,9 @@ class ChallengeNotFound(ChallengeError):
 
 DEFAULT_CHALLENGE_REWARDS = {'1': 100, '2': 50, '3': 25}
 SUPPORTED_SCORING_METHODS = {'return-only', 'risk-adjusted'}
-SUPPORTED_CHALLENGE_TRACKS = {'crypto', 'us-stock', 'polymarket'}
+SUPPORTED_CHALLENGE_TRACKS = {'crypto', 'us-stock', 'polymarket', 'byreal'}
 SUPPORTED_CHALLENGE_MODES = {'individual', 'team', 'hybrid'}
-AUTHORITATIVE_CHALLENGE_PRICE_MARKETS = {'crypto', 'us-stock', 'polymarket'}
+AUTHORITATIVE_CHALLENGE_PRICE_MARKETS = {'crypto', 'us-stock', 'polymarket', 'byreal'}
 POLYMARKET_CHALLENGE_CLOCK_SKEW_SECONDS = 300
 
 
@@ -184,11 +184,12 @@ def _fetch_authoritative_challenge_trade_price(
         raise ChallengeError('Server price fetcher is unavailable') from exc
 
     with price_fetch_logging(False):
+        price_market = 'crypto' if market == 'byreal' else market
         try:
             price = price_fetcher.get_price_from_market(
                 symbol,
                 executed_at,
-                market,
+                price_market,
                 token_id=str(token_id or '').strip() or None,
                 outcome=str(outcome or '').strip() or None,
             )

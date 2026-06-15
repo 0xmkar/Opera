@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { Link, useLocation } from 'react-router-dom'
 
-import { AgentName, type AgentInfo, hasPermission, isVerifiedAgent, useLanguage, useTheme } from './appShared'
+import { AgentName, type AgentInfo, hasPermission, isVerifiedAgent, t, useTheme } from './appShared'
 
 export function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
   useEffect(() => {
@@ -58,7 +58,6 @@ export function Sidebar({
   onMarkCategoryRead: (category: 'discussion' | 'strategy' | 'experiment') => void
 }) {
   const location = useLocation()
-  const { t } = useLanguage()
   const [showToken, setShowToken] = useState(false)
 
   const canUseExperiments = hasPermission(agentInfo, 'experiment_admin')
@@ -74,6 +73,7 @@ export function Sidebar({
     ...(canUseTeamMissionAdmin ? [{ path: '/team-missions', icon: '▦', label: 'Team Missions', requiresAuth: true }] : []),
     ...(canUseExperiments ? [{ path: '/experiments', icon: '◇', label: 'Experiments', requiresAuth: true, badge: notificationCounts.experiment, category: 'experiment' as const }] : []),
     ...(canUseResearchExports ? [{ path: '/research-exports', icon: '⇩', label: 'Research Exports', requiresAuth: true }] : []),
+    { path: '/byreal', icon: '◎', label: 'Byreal Agent', requiresAuth: true },
     { path: '/copytrading', icon: '📋', label: 'Copy Trading', requiresAuth: true },
     { path: '/strategies', icon: '📈', label: t.nav.strategies, requiresAuth: false, badge: notificationCounts.strategy, category: 'strategy' as const },
     { path: '/discussions', icon: '💬', label: t.nav.discussions, requiresAuth: false, badge: notificationCounts.discussion, category: 'discussion' as const },

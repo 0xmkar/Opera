@@ -264,7 +264,7 @@ def build_network_edges() -> dict[str, Any]:
                 target_id = agents_by_name.get(name.lower())
                 if target_id:
                     insert_edge(row["agent_id"], target_id, "mention", row["signal_id"], 1, {"mentioned_name": name})
-                    if "cite" in lower_text or "source" in lower_text or "引用" in text:
+                    if "cite" in lower_text or "source" in lower_text:
                         insert_edge(row["agent_id"], target_id, "citation", row["signal_id"], 1, {"mentioned_name": name, "source": "mention"})
 
         cursor.execute(
@@ -273,7 +273,7 @@ def build_network_edges() -> dict[str, Any]:
             FROM signals s
             JOIN signal_replies sr ON sr.signal_id = s.signal_id
             WHERE sr.agent_id != s.agent_id
-              AND (s.content LIKE '%cite%' OR s.content LIKE '%source%' OR s.content LIKE '%引用%')
+              AND (s.content LIKE '%cite%' OR s.content LIKE '%source%')
             """
         )
         for row in cursor.fetchall():

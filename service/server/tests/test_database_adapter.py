@@ -20,6 +20,6 @@ def test_postgres_adapter_escapes_like_percent_literals():
 
 
 def test_postgres_adapter_preserves_existing_escaped_percent_literals():
-    query = _adapt_sql_for_postgres("SELECT * FROM signals WHERE content LIKE '%%引用%%'")
+    query = _adapt_sql_for_postgres("SELECT * FROM signals WHERE content LIKE '%%citation%%'")
 
-    assert "LIKE '%%引用%%'" in query
+    assert "LIKE '%%citation%%'" in query

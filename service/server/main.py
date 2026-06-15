@@ -1,14 +1,14 @@
 """
 Opera Backend Server
 
-项目结构：
-- config.py   : 配置和环境变量
-- database.py : 数据库初始化和连接
-- utils.py    : 通用工具函数
-- tasks.py    : 后台任务
-- services.py : 业务逻辑服务
-- routes.py   : API路由定义
-- main.py     : 应用入口
+Project layout:
+- config.py   : configuration and environment variables
+- database.py : database initialization and connections
+- utils.py    : shared utility helpers
+- tasks.py    : background tasks
+- services.py : business logic services
+- routes.py   : API route definitions
+- main.py     : application entrypoint
 """
 
 import secrets

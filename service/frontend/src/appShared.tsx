@@ -1,12 +1,6 @@
 import { createContext, useContext } from 'react'
 
-import { Language, getT } from './i18n'
-
-interface LanguageContextType {
-  language: Language
-  setLanguage: (lang: Language) => void
-  t: ReturnType<typeof getT>
-}
+export { t } from './i18n'
 
 export type ThemeMode = 'dark' | 'light'
 
@@ -68,16 +62,7 @@ interface ThemeContextType {
   setTheme: (theme: ThemeMode) => void
 }
 
-export const LanguageContext = createContext<LanguageContextType | null>(null)
 export const ThemeContext = createContext<ThemeContextType | null>(null)
-
-export const useLanguage = () => {
-  const context = useContext(LanguageContext)
-  if (!context) {
-    throw new Error('useLanguage must be used within LanguageProvider')
-  }
-  return context
-}
 
 export const useTheme = () => {
   const context = useContext(ThemeContext)
@@ -112,11 +97,11 @@ function parseRecordedAt(recordedAt: string) {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-export function formatIntelTimestamp(timestamp: string | null | undefined, language: Language) {
-  if (!timestamp) return language === 'zh' ? '暂无快照' : 'No snapshot yet'
+export function formatIntelTimestamp(timestamp: string | null | undefined) {
+  if (!timestamp) return 'No snapshot yet'
   const parsed = parseRecordedAt(timestamp)
-  if (!parsed) return language === 'zh' ? '时间未知' : 'Unknown time'
-  const formatted = parsed.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US', {
+  if (!parsed) return 'Unknown time'
+  const formatted = parsed.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -134,16 +119,16 @@ export function formatIntelNumber(value: number | null | undefined, digits = 2) 
   return Number(value).toFixed(digits)
 }
 
-function formatLeaderboardLabel(date: Date, chartRange: LeaderboardChartRange, language: Language) {
+function formatLeaderboardLabel(date: Date, chartRange: LeaderboardChartRange) {
   if (chartRange === '24h') {
-    return date.toLocaleTimeString(language === 'zh' ? 'zh-CN' : 'en-US', {
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     })
   }
 
-  return date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', {
+  return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
   })
@@ -152,7 +137,6 @@ function formatLeaderboardLabel(date: Date, chartRange: LeaderboardChartRange, l
 export function buildLeaderboardChartData(
   profitHistory: any[],
   chartRange: LeaderboardChartRange,
-  language: Language,
   chartMetric: LeaderboardChartMetric = 'return'
 ) {
   const topAgents = profitHistory.slice(0, 10).map((agent: any) => ({
@@ -197,7 +181,7 @@ export function buildLeaderboardChartData(
   return bucketEnds.map((bucketEndTimestamp) => {
     const bucketEndDate = new Date(bucketEndTimestamp)
     const point: Record<string, any> = {
-      time: formatLeaderboardLabel(bucketEndDate, chartRange, language)
+      time: formatLeaderboardLabel(bucketEndDate, chartRange)
     }
 
     topAgents.forEach((agent: any) => {
@@ -310,9 +294,7 @@ export function LeaderboardTooltip({
 export type MarketIntelNewsCategory = {
   category: string
   label: string
-  label_zh: string
   description: string
-  description_zh: string
   items: any[]
   summary: any
   created_at: string | null
@@ -320,14 +302,14 @@ export type MarketIntelNewsCategory = {
 }
 
 export const MARKETS = [
-  { value: 'all', label: 'All', labelZh: '全部', supported: true },
-  { value: 'us-stock', label: 'US Stock', labelZh: '美股', supported: true },
-  { value: 'crypto', label: 'Crypto (Testing)', labelZh: '加密货币（测试中）', supported: true },
-  { value: 'a-stock', label: 'A-Share (Developing)', labelZh: 'A股（开发中）', supported: false },
-  { value: 'polymarket', label: 'Polymarket (Testing)', labelZh: '预测市场（测试中）', supported: true },
-  { value: 'forex', label: 'Forex (Developing)', labelZh: '外汇（开发中）', supported: false },
-  { value: 'options', label: 'Options (Developing)', labelZh: '期权（开发中）', supported: false },
-  { value: 'futures', label: 'Futures (Developing)', labelZh: '期货（开发中）', supported: false },
+  { value: 'all', label: 'All', supported: true },
+  { value: 'us-stock', label: 'US Stock', supported: true },
+  { value: 'crypto', label: 'Crypto (Testing)', supported: true },
+  { value: 'a-stock', label: 'A-Share (Developing)', supported: false },
+  { value: 'polymarket', label: 'Polymarket (Testing)', supported: true },
+  { value: 'forex', label: 'Forex (Developing)', supported: false },
+  { value: 'options', label: 'Options (Developing)', supported: false },
+  { value: 'futures', label: 'Futures (Developing)', supported: false },
 ]
 
 export function isUSMarketOpen(): boolean {

@@ -1,7 +1,7 @@
 """
 Tasks Module
 
-后台任务管理
+Background task management.
 """
 
 import asyncio
@@ -1223,6 +1223,22 @@ async def build_network_edges_loop():
         await asyncio.sleep(interval_s)
 
 
+async def process_byreal_agent_runs_loop():
+    """Background worker: process pending Byreal managed-agent runs."""
+    from byreal_agent import process_pending_runs
+    from config import BYREAL_AGENT_WORKER_INTERVAL
+
+    await asyncio.sleep(12)
+    while True:
+        try:
+            result = await asyncio.to_thread(process_pending_runs, 3)
+            if result.get("processed"):
+                print(f"[Byreal Agent Worker] processed={result['processed']} completed={result['completed']} failed={result['failed']}")
+        except Exception as exc:
+            print(f"[Byreal Agent Worker Error] {exc}")
+        await asyncio.sleep(max(2, BYREAL_AGENT_WORKER_INTERVAL))
+
+
 BACKGROUND_TASK_REGISTRY = {
     "prices": update_position_prices,
     "profit_history": record_profit_history,
@@ -1238,6 +1254,7 @@ BACKGROUND_TASK_REGISTRY = {
     "macro_signals": refresh_macro_signal_snapshots_loop,
     "etf_flows": refresh_etf_flow_snapshots_loop,
     "stock_analysis": refresh_stock_analysis_snapshots_loop,
+    "byreal_agent_runs": process_byreal_agent_runs_loop,
 }
 
 

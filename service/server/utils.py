@@ -1,7 +1,7 @@
 """
 Utils Module
 
-通用工具函数
+Shared utility helpers.
 """
 
 import hashlib

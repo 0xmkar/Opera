@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import { AgentName, API_BASE, MARKETS, isVerifiedAgent, useLanguage } from './appShared'
+import { AgentName, API_BASE, MARKETS, isVerifiedAgent } from './appShared'
 
 type ChallengePageProps = {
   token?: string | null
@@ -12,11 +12,11 @@ const statusValues = ['upcoming', 'active', 'settled'] as const
 const challengeModeValues = ['individual', 'team', 'hybrid'] as const
 type ChallengeTrack = 'all' | 'crypto' | 'us-stock' | 'polymarket'
 
-const challengeTrackValues: Array<{ value: ChallengeTrack, label: string, labelZh: string }> = [
-  { value: 'all', label: 'All Tracks', labelZh: '全部赛道' },
-  { value: 'crypto', label: 'Crypto', labelZh: 'Crypto' },
-  { value: 'us-stock', label: 'US Stock', labelZh: '美股' },
-  { value: 'polymarket', label: 'Polymarket', labelZh: 'Polymarket' },
+const challengeTrackValues: Array<{ value: ChallengeTrack, label: string }> = [
+  { value: 'all', label: 'All Tracks' },
+  { value: 'crypto', label: 'Crypto' },
+  { value: 'us-stock', label: 'US Stock' },
+  { value: 'polymarket', label: 'Polymarket' },
 ]
 
 const creatableChallengeTracks = challengeTrackValues.filter((item) => item.value !== 'all')
@@ -29,11 +29,11 @@ function formatMoney(value: any) {
   return `$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
-function formatDate(value: string | null | undefined, language: string) {
+function formatDate(value: string | null | undefined) {
   if (!value) return '-'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US', {
+  return parsed.toLocaleString('en-US', {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -41,10 +41,10 @@ function formatDate(value: string | null | undefined, language: string) {
   })
 }
 
-function marketLabel(value: string, language: string) {
+function marketLabel(value: string) {
   const track = challengeTrackValues.find((item) => item.value === value)
-  if (track) return track[language === 'zh' ? 'labelZh' : 'label']
-  return MARKETS.find((market) => market.value === value)?.[language === 'zh' ? 'labelZh' : 'label'] || value
+  if (track) return track['label']
+  return MARKETS.find((market) => market.value === value)?.label || value
 }
 
 function defaultSymbolForTrack(value: string) {
@@ -65,7 +65,6 @@ function defaultTradeSymbolForChallenge(challenge: any) {
 
 export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
   const { challengeKey } = useParams()
-  const { language } = useLanguage()
   const [status, setStatus] = useState<'upcoming' | 'active' | 'settled'>('active')
   const [track, setTrack] = useState<ChallengeTrack>('all')
   const [challenges, setChallenges] = useState<any[]>([])
@@ -148,7 +147,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       setChallenges(data.challenges || [])
       setError(null)
     } catch (err: any) {
-      setError(err?.message || (language === 'zh' ? '挑战加载失败' : 'Failed to load challenges'))
+      setError(err?.message || ('Failed to load challenges'))
       setChallenges([])
     } finally {
       setLoading(false)
@@ -242,7 +241,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       }
       setError(null)
     } catch (err: any) {
-      setError(err?.message || (language === 'zh' ? '挑战详情加载失败' : 'Failed to load challenge detail'))
+      setError(err?.message || ('Failed to load challenge detail'))
       setDetail(null)
       setLeaderboard([])
       setTeamLeaderboard([])
@@ -287,7 +286,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       if (!res.ok) throw new Error(data.detail || 'join_failed')
       await Promise.all([loadMyChallenges(), challengeKey ? loadDetail() : loadList()])
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '加入挑战失败' : 'Failed to join challenge'))
+      alert(err?.message || ('Failed to join challenge'))
     } finally {
       setBusy(false)
     }
@@ -335,7 +334,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       setTrack(createdTrack)
       await loadList(createdStatus, createdTrack)
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '创建挑战失败' : 'Failed to create challenge'))
+      alert(err?.message || ('Failed to create challenge'))
     } finally {
       setBusy(false)
     }
@@ -362,7 +361,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       setSubmissionContent('')
       await loadDetail()
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '提交失败' : 'Submission failed'))
+      alert(err?.message || ('Submission failed'))
     } finally {
       setBusy(false)
     }
@@ -374,7 +373,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
     const price = Number(tradeForm.price)
     const quantity = Number(tradeForm.quantity)
     if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(quantity) || quantity <= 0) {
-      alert(language === 'zh' ? '价格和数量必须为正数' : 'Price and quantity must be positive')
+      alert('Price and quantity must be positive')
       return
     }
     setBusy(true)
@@ -405,7 +404,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       }))
       await loadDetail()
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '挑战交易失败' : 'Challenge trade failed'))
+      alert(err?.message || ('Challenge trade failed'))
     } finally {
       setBusy(false)
     }
@@ -432,7 +431,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       setTeamForm({ team_key: '', name: '' })
       await Promise.all([loadMyChallenges(), loadDetail()])
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '创建团队失败' : 'Failed to create team'))
+      alert(err?.message || ('Failed to create team'))
     } finally {
       setBusy(false)
     }
@@ -454,7 +453,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       if (!res.ok) throw new Error(data.detail || 'team_join_failed')
       await Promise.all([loadMyChallenges(), loadDetail()])
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '加入团队失败' : 'Failed to join team'))
+      alert(err?.message || ('Failed to join team'))
     } finally {
       setBusy(false)
     }
@@ -467,7 +466,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
     const price = Number(tradeForm.price)
     const quantity = Number(tradeForm.quantity)
     if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(quantity) || quantity <= 0) {
-      alert(language === 'zh' ? '价格和数量必须为正数' : 'Price and quantity must be positive')
+      alert('Price and quantity must be positive')
       return
     }
     setBusy(true)
@@ -493,7 +492,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       setTradeForm((current) => ({ ...current, price: '', quantity: '', content: '' }))
       await loadDetail()
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '团队交易失败' : 'Team trade failed'))
+      alert(err?.message || ('Team trade failed'))
     } finally {
       setBusy(false)
     }
@@ -521,7 +520,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       setTeamSubmissionContent('')
       await loadDetail()
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '团队提交失败' : 'Team submission failed'))
+      alert(err?.message || ('Team submission failed'))
     } finally {
       setBusy(false)
     }
@@ -543,7 +542,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
       if (!res.ok) throw new Error(data.detail || 'team_vote_failed')
       await loadDetail()
     } catch (err: any) {
-      alert(err?.message || (language === 'zh' ? '团队投票失败' : 'Team vote failed'))
+      alert(err?.message || ('Team vote failed'))
     } finally {
       setBusy(false)
     }
@@ -570,7 +569,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
     return (
       <div className="challenge-page">
         <div className="challenge-back-row">
-          <Link to="/challenges" className="back-button">← {language === 'zh' ? '返回挑战列表' : 'Back to challenges'}</Link>
+          <Link to="/challenges" className="back-button">← {'Back to challenges'}</Link>
         </div>
 
         <section className="challenge-hero">
@@ -579,7 +578,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
               <span>{detail.status}</span>
               <span>{mode}</span>
               <span>{detail.scoring_method}</span>
-              <span>{marketLabel(detail.market, language)}</span>
+              <span>{marketLabel(detail.market)}</span>
             </div>
             <h1 className="challenge-title">{detail.title}</h1>
             {detail.description && <p className="challenge-copy">{detail.description}</p>}
@@ -593,13 +592,13 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                 onClick={() => handleJoin(detail.challenge_key)}
               >
                 {isJoined
-                  ? (language === 'zh' ? '已加入' : 'Joined')
-                  : (language === 'zh' ? '加入挑战' : 'Join')}
+                  ? ('Joined')
+                  : ('Join')}
               </button>
             )}
             {!token && (
               <Link className="btn btn-secondary" to="/login">
-                {language === 'zh' ? '登录后加入' : 'Login to join'}
+                {'Login to join'}
               </Link>
             )}
           </div>
@@ -607,46 +606,46 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
 
         <section className="challenge-metrics-strip">
           <div>
-            <span>{language === 'zh' ? '参赛者' : 'Participants'}</span>
+            <span>{'Participants'}</span>
             <strong>{detail.participant_count || 0}</strong>
           </div>
           <div>
-            <span>{language === 'zh' ? '团队' : 'Teams'}</span>
+            <span>{'Teams'}</span>
             <strong>{detail.team_count || teams.length || 0}</strong>
           </div>
           <div>
-            <span>{language === 'zh' ? '初始资金' : 'Initial capital'}</span>
+            <span>{'Initial capital'}</span>
             <strong>{formatMoney(detail.initial_capital)}</strong>
           </div>
           <div>
-            <span>{language === 'zh' ? '最大仓位' : 'Max position'}</span>
+            <span>{'Max position'}</span>
             <strong>{formatPct(detail.max_position_pct)}</strong>
           </div>
           <div>
-            <span>{language === 'zh' ? '结束时间' : 'Ends'}</span>
-            <strong>{formatDate(detail.end_at, language)}</strong>
+            <span>{'Ends'}</span>
+            <strong>{formatDate(detail.end_at)}</strong>
           </div>
         </section>
 
         <div className="challenge-detail-grid">
           <section className="challenge-panel challenge-panel-main">
             <div className="challenge-section-header">
-              <h2>{language === 'zh' ? 'Leaderboard' : 'Leaderboard'}</h2>
+              <h2>{'Leaderboard'}</h2>
               <span className="challenge-badge">{detail.challenge_key}</span>
             </div>
             {leaderboard.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-title">{language === 'zh' ? '暂无排名' : 'No leaderboard yet'}</div>
+                <div className="empty-title">{'No leaderboard yet'}</div>
               </div>
             ) : (
               <div className="challenge-leaderboard">
                 <div className="challenge-rank-row challenge-rank-header" aria-hidden="true">
-                  <span>{language === 'zh' ? '排名' : 'Rank'}</span>
-                  <span>{language === 'zh' ? 'Agent' : 'Agent'}</span>
-                  <span>{language === 'zh' ? '收益' : 'Return'}</span>
-                  <span>{language === 'zh' ? '最大回撤' : 'Max DD'}</span>
-                  <span>{language === 'zh' ? '交易数' : 'Trades'}</span>
-                  <span>{language === 'zh' ? '得分 / 状态' : 'Score / Status'}</span>
+                  <span>{'Rank'}</span>
+                  <span>{'Agent'}</span>
+                  <span>{'Return'}</span>
+                  <span>{'Max DD'}</span>
+                  <span>{'Trades'}</span>
+                  <span>{'Score / Status'}</span>
                 </div>
                 {leaderboard.map((row) => (
                   <div key={`${row.agent_id}-${row.rank || 'dq'}`} className={`challenge-rank-row ${row.disqualified_reason ? 'disqualified' : ''}`}>
@@ -658,13 +657,13 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     />
                     <span
                       className={(row.return_pct || 0) >= 0 ? 'challenge-positive' : 'challenge-negative'}
-                      data-label={language === 'zh' ? '收益' : 'Return'}
+                      data-label={'Return'}
                     >
                       {formatPct(row.return_pct)}
                     </span>
-                    <span data-label={language === 'zh' ? '最大回撤' : 'Max DD'}>{formatPct(row.max_drawdown)}</span>
-                    <span data-label={language === 'zh' ? '交易数' : 'Trades'}>{row.trade_count || 0}</span>
-                    <span data-label={language === 'zh' ? '得分 / 状态' : 'Score / Status'}>{row.disqualified_reason || formatPct(row.final_score)}</span>
+                    <span data-label={'Max DD'}>{formatPct(row.max_drawdown)}</span>
+                    <span data-label={'Trades'}>{row.trade_count || 0}</span>
+                    <span data-label={'Score / Status'}>{row.disqualified_reason || formatPct(row.final_score)}</span>
                   </div>
                 ))}
               </div>
@@ -673,14 +672,14 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
 
           <aside className="challenge-panel">
             <div className="challenge-section-header">
-              <h2>{language === 'zh' ? '规则' : 'Rules'}</h2>
+              <h2>{'Rules'}</h2>
             </div>
             <div className="challenge-rule-stack">
-              <div><span>{language === 'zh' ? '标的' : 'Symbol'}</span><strong>{detail.symbol || 'all'}</strong></div>
-              <div><span>{language === 'zh' ? '类型' : 'Type'}</span><strong>{detail.challenge_type}</strong></div>
-              <div><span>{language === 'zh' ? '模式' : 'Mode'}</span><strong>{mode}</strong></div>
-              <div><span>{language === 'zh' ? '评分' : 'Scoring'}</span><strong>{detail.scoring_method}</strong></div>
-              <div><span>{language === 'zh' ? '最大回撤参数' : 'Drawdown setting'}</span><strong>{formatPct(detail.max_drawdown_pct)}</strong></div>
+              <div><span>{'Symbol'}</span><strong>{detail.symbol || 'all'}</strong></div>
+              <div><span>{'Type'}</span><strong>{detail.challenge_type}</strong></div>
+              <div><span>{'Mode'}</span><strong>{mode}</strong></div>
+              <div><span>{'Scoring'}</span><strong>{detail.scoring_method}</strong></div>
+              <div><span>{'Drawdown setting'}</span><strong>{formatPct(detail.max_drawdown_pct)}</strong></div>
             </div>
             <pre className="challenge-rules-json">{JSON.stringify(detail.rules || {}, null, 2)}</pre>
           </aside>
@@ -689,8 +688,8 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
         {supportsTeams && (
           <section className="challenge-panel">
             <div className="challenge-section-header">
-              <h2>{language === 'zh' ? '团队赛' : 'Team Competition'}</h2>
-              <span className="challenge-badge">{myTeam?.team_name || (language === 'zh' ? '未加入团队' : 'No team joined')}</span>
+              <h2>{'Team Competition'}</h2>
+              <span className="challenge-badge">{myTeam?.team_name || ('No team joined')}</span>
             </div>
             {token && !myTeam && detail.status !== 'settled' && detail.status !== 'canceled' && (
               <form className="challenge-create-grid challenge-team-form" onSubmit={handleCreateTeam}>
@@ -698,7 +697,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                   className="form-input"
                   value={teamForm.name}
                   onChange={(event) => setTeamForm({ ...teamForm, name: event.target.value })}
-                  placeholder={language === 'zh' ? '团队名称' : 'Team name'}
+                  placeholder={'Team name'}
                   required
                 />
                 <input
@@ -708,13 +707,13 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                   placeholder="team-key"
                 />
                 <button className="btn btn-primary" disabled={busy} type="submit">
-                  {language === 'zh' ? '创建团队' : 'Create team'}
+                  {'Create team'}
                 </button>
               </form>
             )}
             {teams.length === 0 ? (
               <div className="empty-state challenge-empty-compact">
-                <div className="empty-title">{language === 'zh' ? '暂无团队' : 'No teams yet'}</div>
+                <div className="empty-title">{'No teams yet'}</div>
               </div>
             ) : (
               <div className="challenge-team-list">
@@ -722,11 +721,11 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                   <div key={team.id} className="challenge-team-row">
                     <div>
                       <strong>{team.name}</strong>
-                      <span>{team.team_key} · {language === 'zh' ? '成员' : 'Members'} {team.member_count || team.members?.length || 0}</span>
+                      <span>{team.team_key} · {'Members'} {team.member_count || team.members?.length || 0}</span>
                     </div>
                     {token && !myTeam && detail.status !== 'settled' && detail.status !== 'canceled' && (
                       <button className="btn btn-secondary" disabled={busy} onClick={() => handleJoinTeam(team.id)}>
-                        {language === 'zh' ? '加入团队' : 'Join team'}
+                        {'Join team'}
                       </button>
                     )}
                   </div>
@@ -737,12 +736,12 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
             {teamLeaderboard.length > 0 && (
               <div className="challenge-leaderboard challenge-team-leaderboard">
                 <div className="challenge-rank-row challenge-rank-header" aria-hidden="true">
-                  <span>{language === 'zh' ? '排名' : 'Rank'}</span>
-                  <span>{language === 'zh' ? '团队' : 'Team'}</span>
-                  <span>{language === 'zh' ? '收益' : 'Return'}</span>
-                  <span>{language === 'zh' ? '最大回撤' : 'Max DD'}</span>
-                  <span>{language === 'zh' ? '成员' : 'Members'}</span>
-                  <span>{language === 'zh' ? '交易数' : 'Trades'}</span>
+                  <span>{'Rank'}</span>
+                  <span>{'Team'}</span>
+                  <span>{'Return'}</span>
+                  <span>{'Max DD'}</span>
+                  <span>{'Members'}</span>
+                  <span>{'Trades'}</span>
                 </div>
                 {teamLeaderboard.map((row) => (
                   <div key={`${row.team_id}-${row.rank || 'team'}`} className={`challenge-rank-row ${row.disqualified_reason ? 'disqualified' : ''}`}>
@@ -764,19 +763,19 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
             {detail.status === 'active' && (
               <section className="challenge-panel">
                 <div className="challenge-section-header">
-                  <h2>{language === 'zh' ? '团队交易' : 'Team Trade'}</h2>
+                  <h2>{'Team Trade'}</h2>
                   <span className="challenge-badge">{myTeam.team_name}</span>
                 </div>
                 <form className="challenge-trade-form" onSubmit={handleTeamTrade}>
                   <label className="challenge-field">
-                    <span>{language === 'zh' ? '方向' : 'Side'}</span>
+                    <span>{'Side'}</span>
                     <select className="form-input" value={tradeForm.side} onChange={(event) => setTradeForm({ ...tradeForm, side: event.target.value })}>
-                      <option value="buy">{language === 'zh' ? '买入' : 'Buy'}</option>
-                      <option value="sell">{language === 'zh' ? '卖出' : 'Sell'}</option>
+                      <option value="buy">{'Buy'}</option>
+                      <option value="sell">{'Sell'}</option>
                       {detail.market !== 'polymarket' && (
                         <>
-                          <option value="short">{language === 'zh' ? '做空' : 'Short'}</option>
-                          <option value="cover">{language === 'zh' ? '平空' : 'Cover'}</option>
+                          <option value="short">{'Short'}</option>
+                          <option value="cover">{'Cover'}</option>
                         </>
                       )}
                     </select>
@@ -792,34 +791,34 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     />
                   </label>
                   <label className="challenge-field">
-                    <span>{language === 'zh' ? '价格' : 'Price'}</span>
+                    <span>{'Price'}</span>
                     <input className="form-input" type="number" step="any" min="0" value={tradeForm.price} onChange={(event) => setTradeForm({ ...tradeForm, price: event.target.value })} required />
                   </label>
                   <label className="challenge-field">
-                    <span>{language === 'zh' ? '数量' : 'Quantity'}</span>
+                    <span>{'Quantity'}</span>
                     <input className="form-input" type="number" step="any" min="0" value={tradeForm.quantity} onChange={(event) => setTradeForm({ ...tradeForm, quantity: event.target.value })} required />
                   </label>
-                  <textarea className="form-textarea challenge-trade-note" value={tradeForm.content} onChange={(event) => setTradeForm({ ...tradeForm, content: event.target.value })} placeholder={language === 'zh' ? '团队交易备注' : 'Team trade note'} />
-                  <button className="btn btn-primary" disabled={busy} type="submit">{language === 'zh' ? '提交团队交易' : 'Submit team trade'}</button>
+                  <textarea className="form-textarea challenge-trade-note" value={tradeForm.content} onChange={(event) => setTradeForm({ ...tradeForm, content: event.target.value })} placeholder={'Team trade note'} />
+                  <button className="btn btn-primary" disabled={busy} type="submit">{'Submit team trade'}</button>
                 </form>
               </section>
             )}
             <section className="challenge-panel challenge-portfolio-panel">
               <div className="challenge-section-header">
-                <h2>{language === 'zh' ? '团队持仓' : 'Team Portfolio'}</h2>
-                <span className="challenge-badge">{teamLivePortfolio?.disqualified_reason || (language === 'zh' ? '团队' : 'Team')}</span>
+                <h2>{'Team Portfolio'}</h2>
+                <span className="challenge-badge">{teamLivePortfolio?.disqualified_reason || ('Team')}</span>
               </div>
               <div className="challenge-portfolio-grid">
-                <div><span>{language === 'zh' ? '现金' : 'Cash'}</span><strong>{formatMoney(teamLivePortfolio?.cash)}</strong></div>
-                <div><span>{language === 'zh' ? '净值' : 'Value'}</span><strong>{formatMoney(teamLivePortfolio?.ending_value)}</strong></div>
-                <div><span>{language === 'zh' ? '收益' : 'Return'}</span><strong className={(teamLivePortfolio?.return_pct || 0) >= 0 ? 'challenge-positive' : 'challenge-negative'}>{formatPct(teamLivePortfolio?.return_pct)}</strong></div>
-                <div><span>{language === 'zh' ? '最大回撤' : 'Max DD'}</span><strong>{formatPct(teamLivePortfolio?.max_drawdown)}</strong></div>
-                <div><span>{language === 'zh' ? '交易数' : 'Trades'}</span><strong>{teamLivePortfolio?.trade_count || 0}</strong></div>
+                <div><span>{'Cash'}</span><strong>{formatMoney(teamLivePortfolio?.cash)}</strong></div>
+                <div><span>{'Value'}</span><strong>{formatMoney(teamLivePortfolio?.ending_value)}</strong></div>
+                <div><span>{'Return'}</span><strong className={(teamLivePortfolio?.return_pct || 0) >= 0 ? 'challenge-positive' : 'challenge-negative'}>{formatPct(teamLivePortfolio?.return_pct)}</strong></div>
+                <div><span>{'Max DD'}</span><strong>{formatPct(teamLivePortfolio?.max_drawdown)}</strong></div>
+                <div><span>{'Trades'}</span><strong>{teamLivePortfolio?.trade_count || 0}</strong></div>
               </div>
               <div className="challenge-position-list">
-                <h3>{language === 'zh' ? '团队持仓' : 'Team Positions'}</h3>
+                <h3>{'Team Positions'}</h3>
                 {teamPositions.length === 0 ? (
-                  <div className="empty-state challenge-empty-compact"><div className="empty-title">{language === 'zh' ? '暂无持仓' : 'No positions'}</div></div>
+                  <div className="empty-state challenge-empty-compact"><div className="empty-title">{'No positions'}</div></div>
                 ) : (
                   teamPositions.map((position: any) => (
                     <div key={`${position.market}-${position.symbol}-${position.token_id || ''}`} className="challenge-position-row">
@@ -832,7 +831,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
               </div>
               {teamTrades.length > 0 && (
                 <div className="challenge-position-list">
-                  <h3>{language === 'zh' ? '团队最近交易' : 'Recent Team Trades'}</h3>
+                  <h3>{'Recent Team Trades'}</h3>
                   {teamTrades.map((trade: any) => (
                     <div key={trade.id} className="challenge-position-row">
                       <span>{trade.side} {trade.symbol}</span>
@@ -843,12 +842,12 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                 </div>
               )}
               <form className="challenge-submit-form" onSubmit={handleTeamSubmit}>
-                <textarea className="form-textarea" value={teamSubmissionContent} onChange={(event) => setTeamSubmissionContent(event.target.value)} placeholder={language === 'zh' ? '提交团队 thesis、proposal 或复盘' : 'Submit team thesis, proposal, or review'} required />
-                <button className="btn btn-secondary" disabled={busy} type="submit">{language === 'zh' ? '提交团队观点' : 'Submit team note'}</button>
+                <textarea className="form-textarea" value={teamSubmissionContent} onChange={(event) => setTeamSubmissionContent(event.target.value)} placeholder={'Submit team thesis, proposal, or review'} required />
+                <button className="btn btn-secondary" disabled={busy} type="submit">{'Submit team note'}</button>
               </form>
               {teamSubmissions.length === 0 ? (
                 <div className="empty-state challenge-empty-compact">
-                  <div className="empty-title">{language === 'zh' ? '暂无团队提交' : 'No team submissions'}</div>
+                  <div className="empty-title">{'No team submissions'}</div>
                 </div>
               ) : (
                 <div className="challenge-submission-list challenge-team-submission-list">
@@ -859,7 +858,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                           <AgentName name={submission.agent_name} verified={isVerifiedAgent(submission, 'agent')} />
                         </strong>
                         <span>{submission.submission_type}</span>
-                        <time>{formatDate(submission.created_at, language)}</time>
+                        <time>{formatDate(submission.created_at)}</time>
                       </div>
                       <p>{submission.content}</p>
                       <div className="challenge-vote-row">
@@ -872,10 +871,10 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                             onClick={() => handleTeamSubmissionVote(submission.id, vote)}
                           >
                             {vote === 'approve'
-                              ? `${language === 'zh' ? '通过' : 'Approve'} ${submission.approve_count || 0}`
+                              ? `${'Approve'} ${submission.approve_count || 0}`
                               : vote === 'reject'
-                                ? `${language === 'zh' ? '反对' : 'Reject'} ${submission.reject_count || 0}`
-                                : `${language === 'zh' ? '修改' : 'Revise'} ${submission.revise_count || 0}`}
+                                ? `${'Reject'} ${submission.reject_count || 0}`
+                                : `${'Revise'} ${submission.revise_count || 0}`}
                           </button>
                         ))}
                       </div>
@@ -892,23 +891,23 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
             {detail.status === 'active' && (
               <section className="challenge-panel">
                 <div className="challenge-section-header">
-                  <h2>{language === 'zh' ? '挑战交易' : 'Challenge Trade'}</h2>
-                  <span className="challenge-badge">{marketLabel(detail.market, language)}</span>
+                  <h2>{'Challenge Trade'}</h2>
+                  <span className="challenge-badge">{marketLabel(detail.market)}</span>
                 </div>
                 <form className="challenge-trade-form" onSubmit={handleChallengeTrade}>
                   <label className="challenge-field">
-                    <span>{language === 'zh' ? '方向' : 'Side'}</span>
+                    <span>{'Side'}</span>
                     <select
                       className="form-input"
                       value={tradeForm.side}
                       onChange={(event) => setTradeForm({ ...tradeForm, side: event.target.value })}
                     >
-                      <option value="buy">{language === 'zh' ? '买入' : 'Buy'}</option>
-                      <option value="sell">{language === 'zh' ? '卖出' : 'Sell'}</option>
+                      <option value="buy">{'Buy'}</option>
+                      <option value="sell">{'Sell'}</option>
                       {detail.market !== 'polymarket' && (
                         <>
-                          <option value="short">{language === 'zh' ? '做空' : 'Short'}</option>
-                          <option value="cover">{language === 'zh' ? '平空' : 'Cover'}</option>
+                          <option value="short">{'Short'}</option>
+                          <option value="cover">{'Cover'}</option>
                         </>
                       )}
                     </select>
@@ -927,7 +926,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     />
                   </label>
                   <label className="challenge-field">
-                    <span>{language === 'zh' ? '价格' : 'Price'}</span>
+                    <span>{'Price'}</span>
                     <input
                       className="form-input"
                       type="number"
@@ -939,7 +938,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     />
                   </label>
                   <label className="challenge-field">
-                    <span>{language === 'zh' ? '数量' : 'Quantity'}</span>
+                    <span>{'Quantity'}</span>
                     <input
                       className="form-input"
                       type="number"
@@ -954,10 +953,10 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     className="form-textarea challenge-trade-note"
                     value={tradeForm.content}
                     onChange={(event) => setTradeForm({ ...tradeForm, content: event.target.value })}
-                    placeholder={language === 'zh' ? '交易备注' : 'Trade note'}
+                    placeholder={'Trade note'}
                   />
                   <button className="btn btn-primary" disabled={busy} type="submit">
-                    {language === 'zh' ? '提交交易' : 'Submit trade'}
+                    {'Submit trade'}
                   </button>
                 </form>
               </section>
@@ -965,25 +964,25 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
 
             <section className="challenge-panel challenge-portfolio-panel">
               <div className="challenge-section-header">
-                <h2>{language === 'zh' ? '挑战持仓' : 'Challenge Portfolio'}</h2>
-                <span className="challenge-badge">{portfolio?.disqualified_reason || (language === 'zh' ? '进行中' : 'Live')}</span>
+                <h2>{'Challenge Portfolio'}</h2>
+                <span className="challenge-badge">{portfolio?.disqualified_reason || ('Live')}</span>
               </div>
               <div className="challenge-portfolio-grid">
-                <div><span>{language === 'zh' ? '现金' : 'Cash'}</span><strong>{formatMoney(portfolio?.cash)}</strong></div>
-                <div><span>{language === 'zh' ? '净值' : 'Value'}</span><strong>{formatMoney(portfolio?.ending_value)}</strong></div>
+                <div><span>{'Cash'}</span><strong>{formatMoney(portfolio?.cash)}</strong></div>
+                <div><span>{'Value'}</span><strong>{formatMoney(portfolio?.ending_value)}</strong></div>
                 <div>
-                  <span>{language === 'zh' ? '收益' : 'Return'}</span>
+                  <span>{'Return'}</span>
                   <strong className={(portfolio?.return_pct || 0) >= 0 ? 'challenge-positive' : 'challenge-negative'}>{formatPct(portfolio?.return_pct)}</strong>
                 </div>
-                <div><span>{language === 'zh' ? '最大回撤' : 'Max DD'}</span><strong>{formatPct(portfolio?.max_drawdown)}</strong></div>
-                <div><span>{language === 'zh' ? '交易数' : 'Trades'}</span><strong>{portfolio?.trade_count || 0}</strong></div>
+                <div><span>{'Max DD'}</span><strong>{formatPct(portfolio?.max_drawdown)}</strong></div>
+                <div><span>{'Trades'}</span><strong>{portfolio?.trade_count || 0}</strong></div>
               </div>
 
               <div className="challenge-position-list">
-                <h3>{language === 'zh' ? '持仓' : 'Positions'}</h3>
+                <h3>{'Positions'}</h3>
                 {positions.length === 0 ? (
                   <div className="empty-state challenge-empty-compact">
-                    <div className="empty-title">{language === 'zh' ? '暂无持仓' : 'No positions'}</div>
+                    <div className="empty-title">{'No positions'}</div>
                   </div>
                 ) : (
                   positions.map((position: any) => (
@@ -998,7 +997,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
 
               {trades.length > 0 && (
                 <div className="challenge-position-list">
-                  <h3>{language === 'zh' ? '最近交易' : 'Recent Trades'}</h3>
+                  <h3>{'Recent Trades'}</h3>
                   {trades.map((trade: any) => (
                     <div key={trade.id} className="challenge-position-row">
                       <span>{trade.side} {trade.symbol}</span>
@@ -1014,7 +1013,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
 
         <section className="challenge-panel">
           <div className="challenge-section-header">
-            <h2>{language === 'zh' ? '提交与复盘' : 'Submissions and Review'}</h2>
+            <h2>{'Submissions and Review'}</h2>
           </div>
           {token && isJoined && detail.status !== 'settled' && (
             <form className="challenge-submit-form" onSubmit={handleSubmit}>
@@ -1022,17 +1021,17 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                 className="form-textarea"
                 value={submissionContent}
                 onChange={(event) => setSubmissionContent(event.target.value)}
-                placeholder={language === 'zh' ? '写下你的挑战复盘、预测或策略说明' : 'Add a challenge review, prediction, or strategy note'}
+                placeholder={'Add a challenge review, prediction, or strategy note'}
                 required
               />
               <button className="btn btn-primary" disabled={busy} type="submit">
-                {language === 'zh' ? '提交' : 'Submit'}
+                {'Submit'}
               </button>
             </form>
           )}
           {submissions.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-title">{language === 'zh' ? '暂无提交' : 'No submissions yet'}</div>
+              <div className="empty-title">{'No submissions yet'}</div>
             </div>
           ) : (
             <div className="challenge-submission-list">
@@ -1045,7 +1044,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     <span>{submission.submission_type}</span>
                   </div>
                   <p>{submission.content}</p>
-                  <time>{formatDate(submission.created_at, language)}</time>
+                  <time>{formatDate(submission.created_at)}</time>
                 </article>
               ))}
             </div>
@@ -1059,14 +1058,14 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
     <div className="challenge-page">
       <div className="header">
         <div>
-          <h1 className="header-title">{language === 'zh' ? 'Agent Challenge' : 'Agent Challenges'}</h1>
+          <h1 className="header-title">{'Agent Challenges'}</h1>
           <p className="header-subtitle">
-            {language === 'zh' ? '报名、提交、结算和导出都围绕可复现实验记录运行' : 'Enroll, submit, settle, and export reproducible competition records'}
+            {'Enroll, submit, settle, and export reproducible competition records'}
           </p>
         </div>
         {canAdmin && (
           <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
-            {language === 'zh' ? '创建挑战' : 'Create challenge'}
+            {'Create challenge'}
           </button>
         )}
       </div>
@@ -1080,7 +1079,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
               className={track === value.value ? 'active' : ''}
               onClick={() => setTrack(value.value)}
             >
-              {marketLabel(value.value, language)}
+              {marketLabel(value.value)}
             </button>
           ))}
         </div>
@@ -1105,7 +1104,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
               className="form-input"
               value={createForm.title}
               onChange={(event) => setCreateForm({ ...createForm, title: event.target.value })}
-              placeholder={language === 'zh' ? '挑战标题' : 'Challenge title'}
+              placeholder={'Challenge title'}
               required
             />
             <input
@@ -1123,7 +1122,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
               }}
             >
               {creatableChallengeTracks.map((item) => (
-                <option key={item.value} value={item.value}>{marketLabel(item.value, language)}</option>
+                <option key={item.value} value={item.value}>{marketLabel(item.value)}</option>
               ))}
             </select>
             <input
@@ -1175,7 +1174,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
               type="datetime-local"
             />
             <button className="btn btn-primary" disabled={busy} type="submit">
-              {language === 'zh' ? '保存挑战' : 'Save challenge'}
+              {'Save challenge'}
             </button>
           </form>
         </section>
@@ -1189,7 +1188,7 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
 
       {challenges.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-title">{language === 'zh' ? '暂无挑战' : 'No challenges yet'}</div>
+          <div className="empty-title">{'No challenges yet'}</div>
         </div>
       ) : (
         <div className="challenge-list">
@@ -1204,15 +1203,15 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                     <span>{challenge.status}</span>
                     <span>{challenge.mode || 'individual'}</span>
                     <span>{challenge.scoring_method}</span>
-                    <span>{marketLabel(challenge.market, language)} {challenge.symbol || 'all'}</span>
+                    <span>{marketLabel(challenge.market)} {challenge.symbol || 'all'}</span>
                   </div>
                   <Link to={`/challenges/${challenge.challenge_key}`} className="challenge-list-title">
                     {challenge.title}
                   </Link>
                   <div className="challenge-list-meta">
-                    <span>{language === 'zh' ? '参赛' : 'Participants'} {challenge.participant_count || 0}</span>
-                    <span>{language === 'zh' ? '团队' : 'Teams'} {challenge.team_count || 0}</span>
-                    <span>{language === 'zh' ? '结束' : 'Ends'} {formatDate(challenge.end_at, language)}</span>
+                    <span>{'Participants'} {challenge.participant_count || 0}</span>
+                    <span>{'Teams'} {challenge.team_count || 0}</span>
+                    <span>{'Ends'} {formatDate(challenge.end_at)}</span>
                     <span>{formatMoney(challenge.initial_capital)}</span>
                   </div>
                 </div>
@@ -1223,14 +1222,14 @@ export function ChallengePage({ token, canAdmin = false }: ChallengePageProps) {
                       disabled={busy || isJoined}
                       onClick={() => handleJoin(challenge.challenge_key)}
                     >
-                      {isJoined ? (language === 'zh' ? '已加入' : 'Joined') : (language === 'zh' ? '加入' : 'Join')}
+                      {isJoined ? ('Joined') : ('Join')}
                     </button>
                   )}
                   {token && isTeamOnly && teamJoined && (
-                    <span className="challenge-badge">{language === 'zh' ? '已入队' : 'Team joined'}</span>
+                    <span className="challenge-badge">{'Team joined'}</span>
                   )}
                   <Link className="btn btn-ghost" to={`/challenges/${challenge.challenge_key}`}>
-                    {language === 'zh' ? '查看' : 'Open'}
+                    {'Open'}
                   </Link>
                 </div>
               </article>

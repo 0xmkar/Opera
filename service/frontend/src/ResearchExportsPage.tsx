@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { API_BASE, MARKETS, useLanguage } from './appShared'
+import { API_BASE, MARKETS } from './appShared'
 
 const exportSpecs = [
   {
@@ -26,7 +26,6 @@ const exportSpecs = [
 ]
 
 export function ResearchExportsPage({ token }: { token: string }) {
-  const { language } = useLanguage()
   const [experiments, setExperiments] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [busyDownload, setBusyDownload] = useState<string | null>(null)
@@ -81,7 +80,7 @@ export function ResearchExportsPage({ token }: { token: string }) {
     } catch (e) {
       console.error(e)
       setEvents([])
-      setError(language === 'zh' ? '研究数据加载失败' : 'Failed to load research data')
+      setError('Failed to load research data')
     }
   }
 
@@ -107,7 +106,7 @@ export function ResearchExportsPage({ token }: { token: string }) {
       setError(null)
     } catch (e) {
       console.error(e)
-      setError(language === 'zh' ? 'CSV 下载失败' : 'CSV download failed')
+      setError('CSV download failed')
     } finally {
       setBusyDownload(null)
     }
@@ -125,9 +124,9 @@ export function ResearchExportsPage({ token }: { token: string }) {
     <div className="experiment-page">
       <div className="header">
         <div>
-          <h1 className="header-title">{language === 'zh' ? '研究导出' : 'Research Exports'}</h1>
+          <h1 className="header-title">{'Research Exports'}</h1>
           <p className="header-subtitle">
-            {language === 'zh' ? '按时间、实验、分组和市场导出论文复现数据' : 'Export paper-ready datasets by time, experiment, variant, and market'}
+            {'Export paper-ready datasets by time, experiment, variant, and market'}
           </p>
         </div>
       </div>
@@ -135,26 +134,26 @@ export function ResearchExportsPage({ token }: { token: string }) {
       {error && <div className="empty-state"><div className="empty-title">{error}</div></div>}
 
       <section className="experiment-panel">
-        <div className="experiment-section-header"><h2>{language === 'zh' ? '过滤条件' : 'Filters'}</h2></div>
+        <div className="experiment-section-header"><h2>{'Filters'}</h2></div>
         <div className="research-filter-grid">
           <input className="form-input" type="datetime-local" value={filters.start_at} onChange={(event) => setFilters({ ...filters, start_at: event.target.value })} />
           <input className="form-input" type="datetime-local" value={filters.end_at} onChange={(event) => setFilters({ ...filters, end_at: event.target.value })} />
           <select className="form-select" value={filters.experiment_key} onChange={(event) => setFilters({ ...filters, experiment_key: event.target.value, variant_key: '' })}>
-            <option value="">{language === 'zh' ? '全部实验' : 'All experiments'}</option>
+            <option value="">{'All experiments'}</option>
             {experiments.map((experiment) => (
               <option key={experiment.experiment_key} value={experiment.experiment_key}>{experiment.title}</option>
             ))}
           </select>
-          <input className="form-input" value={filters.variant_key} onChange={(event) => setFilters({ ...filters, variant_key: event.target.value })} placeholder={language === 'zh' ? 'variant_key' : 'variant_key'} />
+          <input className="form-input" value={filters.variant_key} onChange={(event) => setFilters({ ...filters, variant_key: event.target.value })} placeholder={'variant_key'} />
           <select className="form-select" value={filters.market} onChange={(event) => setFilters({ ...filters, market: event.target.value })}>
-            <option value="">{language === 'zh' ? '全部市场' : 'All markets'}</option>
+            <option value="">{'All markets'}</option>
             {MARKETS.filter((market) => market.value !== 'all').map((market) => (
-              <option key={market.value} value={market.value}>{language === 'zh' ? market.labelZh : market.label}</option>
+              <option key={market.value} value={market.value}>{market.label}</option>
             ))}
           </select>
           <input className="form-input" type="number" min="1" max="100000" value={filters.limit} onChange={(event) => setFilters({ ...filters, limit: event.target.value })} />
           <input className="form-input" type="number" min="0" value={filters.offset} onChange={(event) => setFilters({ ...filters, offset: event.target.value })} />
-          <button className="btn btn-secondary" onClick={loadEvents}>{language === 'zh' ? '刷新预览' : 'Refresh preview'}</button>
+          <button className="btn btn-secondary" onClick={loadEvents}>{'Refresh preview'}</button>
         </div>
       </section>
 
@@ -167,7 +166,7 @@ export function ResearchExportsPage({ token }: { token: string }) {
             </div>
             <p>{spec.columns}</p>
             <button className="btn btn-primary" disabled={busyDownload === spec.filename} onClick={() => downloadCsv(spec.filename)}>
-              {busyDownload === spec.filename ? (language === 'zh' ? '下载中' : 'Downloading') : (language === 'zh' ? '下载 CSV' : 'Download CSV')}
+              {busyDownload === spec.filename ? ('Downloading') : ('Download CSV')}
             </button>
           </article>
         ))}
@@ -175,7 +174,7 @@ export function ResearchExportsPage({ token }: { token: string }) {
 
       <section className="experiment-panel">
         <div className="experiment-section-header">
-          <h2>{language === 'zh' ? '事件预览' : 'Event Preview'}</h2>
+          <h2>{'Event Preview'}</h2>
           <span className="experiment-badge">{events.length}</span>
         </div>
         <div className="research-event-table">

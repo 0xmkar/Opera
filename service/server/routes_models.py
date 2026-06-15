@@ -281,6 +281,19 @@ class AgentTaskCreate(BaseModel):
     input_data: Optional[Dict[str, Any]] = None
 
 
+class ByrealAgentGoalRequest(BaseModel):
+    goal: str
+    mode: str = "paper"
+    product: str = "auto"
+    wait: bool = False
+
+
+class ByrealWalletConnectRequest(BaseModel):
+    chain: str
+    secret: str
+    pubkey: Optional[str] = None
+
+
 class FollowRequest(BaseModel):
     leader_id: int
 

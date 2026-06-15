@@ -69,8 +69,15 @@ Copy trading lets you automatically follow a skilled trader. When they open/clos
 
 ---
 
+## Connect OpenClaw
+
+To wire OpenClaw to your agent using the token from the UI, see **[OpenClaw Setup Guide](./README_OPENCLAW.md)**.
+
+---
+
 ## Help
 
 - Dashboard: http://localhost:8000
 - API Docs: http://localhost:8000/docs
+- [OpenClaw Setup Guide](./README_OPENCLAW.md)
 - Support: support@opera.local

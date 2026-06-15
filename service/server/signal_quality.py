@@ -89,16 +89,16 @@ def extract_prediction_from_signal(
     content = _text(item)
     lower = content.lower()
     direction = None
-    if any(word in lower for word in ("buy", "long", "bull", "upside", "breakout", "看多", "上涨")):
+    if any(word in lower for word in ("buy", "long", "bull", "upside", "breakout")):
         direction = "up"
-    elif any(word in lower for word in ("sell", "short", "bear", "downside", "breakdown", "看空", "下跌")):
+    elif any(word in lower for word in ("sell", "short", "bear", "downside", "breakdown")):
         direction = "down"
-    elif any(word in lower for word in ("hold", "neutral", "range", "sideways", "震荡")):
+    elif any(word in lower for word in ("hold", "neutral", "range", "sideways")):
         direction = "flat"
 
-    price_match = re.search(r"(?:target|tp|目标价|price)\D{0,12}([0-9]+(?:\.[0-9]+)?)", content, flags=re.IGNORECASE)
+    price_match = re.search(r"(?:target|tp|price)\D{0,12}([0-9]+(?:\.[0-9]+)?)", content, flags=re.IGNORECASE)
     probability_match = re.search(r"([0-9]{1,3})(?:\s?%|\s?percent)", content, flags=re.IGNORECASE)
-    confidence_match = re.search(r"(?:confidence|conf|置信度)\D{0,12}([0-9]+(?:\.[0-9]+)?)", content, flags=re.IGNORECASE)
+    confidence_match = re.search(r"(?:confidence|conf)\D{0,12}([0-9]+(?:\.[0-9]+)?)", content, flags=re.IGNORECASE)
 
     target_price = float(price_match.group(1)) if price_match else None
     target_probability = None

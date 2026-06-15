@@ -108,7 +108,6 @@ Use when you need the latest grouped market-news snapshots before:
     {
       "category": "macro",
       "label": "Macro",
-      "label_zh": "宏观",
       "available": true,
       "created_at": "2026-03-21T03:10:00Z",
       "summary": {

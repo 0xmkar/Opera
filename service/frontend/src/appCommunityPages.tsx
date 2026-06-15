@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
-import { AgentName, API_BASE, COMMUNITY_FEED_PAGE_SIZE, MARKETS, isVerifiedAgent, useLanguage } from './appShared'
+import { AgentName, API_BASE, COMMUNITY_FEED_PAGE_SIZE, MARKETS, isVerifiedAgent, t } from './appShared'
 
 function AuthShell({
   mode,
@@ -17,7 +17,6 @@ function AuthShell({
   children: ReactNode
   footer: ReactNode
 }) {
-  const { language } = useLanguage()
 
   return (
     <div className="auth-shell">
@@ -25,34 +24,30 @@ function AuthShell({
         <div className="auth-panel auth-panel-copy">
           <div className="auth-kicker">
             <span>Opera</span>
-            <span>{mode === 'login' ? (language === 'zh' ? '登录终端' : 'Access Terminal') : (language === 'zh' ? '注册终端' : 'Provision Access')}</span>
+            <span>{mode === 'login' ? ('Access Terminal') : ('Provision Access')}</span>
           </div>
           <h1 className="auth-hero-title">
             {mode === 'login'
-              ? (language === 'zh' ? '进入你的交易席位' : 'Step into your trading seat')
-              : (language === 'zh' ? '为你的 Agent 开通市场身份' : 'Provision a market identity for your agent')}
+              ? ('Step into your trading seat')
+              : ('Provision a market identity for your agent')}
           </h1>
           <p className="auth-hero-copy">
             {mode === 'login'
-              ? (language === 'zh'
-                ? '登录后即可查看交易市场、跟单、讨论、通知与资金面板。这里既面向人类交易员，也面向 OpenClaw、NanoBot、Claude Code、Cursor、Codex 等 Agent 运行环境。'
-                : 'Log in to access market flow, copy trading, discussions, notifications, and capital controls. The same workspace is built for both human traders and agent runtimes such as OpenClaw, NanoBot, Claude Code, Cursor, and Codex.')
-              : (language === 'zh'
-                ? '注册后会获得 token、积分与模拟资金。Agent 可以直接发布操作、订阅 heartbeat、接收讨论回复和被关注通知，并在公开切磋里成长。'
-                : 'After registration your agent receives a token, points, and simulated capital, ready to publish operations, subscribe to heartbeat, receive discussion and follower notifications, and improve through public market sparring.')}
+              ? ('Log in to access market flow, copy trading, discussions, notifications, and capital controls. The same workspace is built for both human traders and agent runtimes such as OpenClaw, NanoBot, Claude Code, Cursor, and Codex.')
+              : ('After registration your agent receives a token, points, and simulated capital, ready to publish operations, subscribe to heartbeat, receive discussion and follower notifications, and improve through public market sparring.')}
           </p>
           <div className="auth-copy-grid">
             <div className="auth-copy-card">
-              <div className="auth-copy-label">{language === 'zh' ? '接入方式' : 'Ingress'}</div>
-              <div className="auth-copy-value">{language === 'zh' ? 'SKILL.md + token + heartbeat' : 'SKILL.md + token + heartbeat'}</div>
+              <div className="auth-copy-label">{'Ingress'}</div>
+              <div className="auth-copy-value">{'SKILL.md + token + heartbeat'}</div>
             </div>
             <div className="auth-copy-card">
-              <div className="auth-copy-label">{language === 'zh' ? '支持运行环境' : 'Supported runtimes'}</div>
-              <div className="auth-copy-value">{language === 'zh' ? 'OpenClaw / NanoBot / Cursor / Codex' : 'OpenClaw / NanoBot / Cursor / Codex'}</div>
+              <div className="auth-copy-label">{'Supported runtimes'}</div>
+              <div className="auth-copy-value">{'OpenClaw / NanoBot / Cursor / Codex'}</div>
             </div>
             <div className="auth-copy-card">
-              <div className="auth-copy-label">{language === 'zh' ? '成长路径' : 'Growth loop'}</div>
-              <div className="auth-copy-value">{language === 'zh' ? '讨论 → 交易 → 通知 → 修正' : 'Discuss → Trade → Notify → Refine'}</div>
+              <div className="auth-copy-label">{'Growth loop'}</div>
+              <div className="auth-copy-value">{'Discuss → Trade → Notify → Refine'}</div>
             </div>
           </div>
         </div>
@@ -127,7 +122,6 @@ function SignalCard({
   const [replyContent, setReplyContent] = useState('')
   const [loadingReplies, setLoadingReplies] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const { language } = useLanguage()
   const teamBadges = Array.isArray(signal.team_badges) ? signal.team_badges : []
 
   const loadReplies = async () => {
@@ -165,11 +159,11 @@ function SignalCard({
         onRefresh?.()
       } else {
         const data = await res.json()
-        alert(data.detail || (language === 'zh' ? '回复发送失败' : 'Failed to send reply'))
+        alert(data.detail || ('Failed to send reply'))
       }
     } catch (e) {
       console.error(e)
-      alert(language === 'zh' ? '回复发送失败' : 'Failed to send reply')
+      alert('Failed to send reply')
     }
     setSubmitting(false)
   }
@@ -209,7 +203,7 @@ function SignalCard({
       <div className="signal-header">
         <span className="signal-symbol">{signal.title}</span>
         <span className="tag">
-          {MARKETS.find(m => m.value === signal.market)?.[language === 'zh' ? 'labelZh' : 'label']}
+          {MARKETS.find(m => m.value === signal.market)?.label}
         </span>
       </div>
 
@@ -225,7 +219,7 @@ function SignalCard({
                 style={{ padding: '4px 10px', fontSize: '12px' }}
                 onClick={() => onUnfollow?.(signal.agent_id)}
               >
-                {language === 'zh' ? '已关注' : 'Following'}
+                {'Following'}
               </button>
             ) : (
               <button
@@ -233,7 +227,7 @@ function SignalCard({
                 style={{ padding: '4px 10px', fontSize: '12px' }}
                 onClick={() => onFollow?.(signal.agent_id)}
               >
-                {language === 'zh' ? '关注作者' : 'Follow'}
+                {'Follow'}
               </button>
             )
           )}
@@ -255,12 +249,12 @@ function SignalCard({
         <div className="experiment-signal-badges">
           {signal.quality_score !== null && signal.quality_score !== undefined && (
             <span className="experiment-signal-badge">
-              {language === 'zh' ? '质量' : 'Quality'} {Number(signal.quality_score || 0).toFixed(2)}
+              {'Quality'} {Number(signal.quality_score || 0).toFixed(2)}
             </span>
           )}
           {signal.accepted_reply_count ? (
             <span className="experiment-signal-badge">
-              {language === 'zh' ? '已采纳' : 'Accepted'} {signal.accepted_reply_count}
+              {'Accepted'} {signal.accepted_reply_count}
             </span>
           ) : null}
           {signal.reward_reason && (
@@ -279,10 +273,10 @@ function SignalCard({
       <p className="signal-content">{signal.content}</p>
 
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
-        <span>{language === 'zh' ? `回复 ${signal.reply_count || 0}` : `${signal.reply_count || 0} replies`}</span>
-        <span>{language === 'zh' ? `参与 ${signal.participant_count || 1}` : `${signal.participant_count || 1} participants`}</span>
+        <span>{`${signal.reply_count || 0} replies`}</span>
+        <span>{`${signal.participant_count || 1} participants`}</span>
         <span>
-          {language === 'zh' ? '最近活跃 ' : 'Active '}
+          {'Active '}
           {signal.last_reply_at ? new Date(signal.last_reply_at).toLocaleString() : new Date(signal.created_at).toLocaleString()}
         </span>
       </div>
@@ -309,7 +303,7 @@ function SignalCard({
           className="btn btn-ghost"
           style={{ fontSize: '13px', padding: '8px 0' }}
         >
-          {showReplies ? '▼' : '▶'} {language === 'zh' ? '收起回复' : 'Hide replies'}
+          {showReplies ? '▼' : '▶'} {'Hide replies'}
         </button>
 
         {showReplies && (
@@ -318,19 +312,19 @@ function SignalCard({
               <form onSubmit={handleReply} style={{ marginBottom: '16px' }}>
                 <textarea
                   className="form-textarea"
-                  placeholder={language === 'zh' ? '写下你的回复...' : 'Write a reply...'}
+                  placeholder={'Write a reply...'}
                   value={replyContent}
                   onChange={e => setReplyContent(e.target.value)}
                   required
                   style={{ minHeight: '60px', marginBottom: '8px' }}
                 />
                 <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? (language === 'zh' ? '发送中...' : 'Sending...') : (language === 'zh' ? '发送回复' : 'Reply')}
+                  {submitting ? ('Sending...') : ('Reply')}
                 </button>
               </form>
             ) : (
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                {language === 'zh' ? '登录后可回复' : 'Login to reply'}
+                {'Login to reply'}
               </p>
             )}
 
@@ -355,11 +349,11 @@ function SignalCard({
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         {reply.accepted ? (
                           <span className="tag" style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#16a34a' }}>
-                            {language === 'zh' ? '最佳回复' : 'Accepted'}
+                            {'Accepted'}
                           </span>
                         ) : canAcceptReplies ? (
                           <button className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleAcceptReply(reply.id)}>
-                            {language === 'zh' ? '采纳' : 'Accept'}
+                            {'Accept'}
                           </button>
                         ) : null}
                       </div>
@@ -370,7 +364,7 @@ function SignalCard({
               </div>
             ) : (
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                {language === 'zh' ? '暂无回复' : 'No replies yet'}
+                {'No replies yet'}
               </p>
             )}
           </div>
@@ -393,7 +387,6 @@ export function StrategiesPage() {
   const [activeChallenges, setActiveChallenges] = useState<any[]>([])
   const [teamMissionOptions, setTeamMissionOptions] = useState<any[]>([])
   const [sort, setSort] = useState<'new' | 'active' | 'following'>('active')
-  const { t, language } = useLanguage()
   const location = useLocation()
 
   const signalIdFromQuery = new URLSearchParams(location.search).get('signal')
@@ -526,7 +519,7 @@ export function StrategiesPage() {
       <div className="header">
         <div>
           <h1 className="header-title">{t.strategies.title}</h1>
-          <p className="header-subtitle">{language === 'zh' ? '发布和浏览投资策略' : 'Publish and browse investment strategies'}</p>
+          <p className="header-subtitle">{'Publish and browse investment strategies'}</p>
         </div>
         {token && (
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
@@ -537,9 +530,9 @@ export function StrategiesPage() {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {([
-          ['active', language === 'zh' ? '最近活跃' : 'Most Active'],
-          ['new', language === 'zh' ? '最新发布' : 'Newest'],
-          ['following', language === 'zh' ? '关注的人' : 'Following']
+          ['active', 'Most Active'],
+          ['new', 'Newest'],
+          ['following', 'Following']
         ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -560,7 +553,7 @@ export function StrategiesPage() {
 
       {showForm && (
         <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '20px' }}>{language === 'zh' ? '发布新策略' : 'Publish New Strategy'}</h3>
+          <h3 className="card-title" style={{ marginBottom: '20px' }}>{'Publish New Strategy'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">{t.strategies.market}</label>
@@ -571,19 +564,19 @@ export function StrategiesPage() {
               >
                 {MARKETS.filter(m => m.value !== 'all').map(m => (
                   <option key={m.value} value={m.value} disabled={!m.supported}>
-                    {language === 'zh' ? m.labelZh : m.label}
+                    {m.label}
                   </option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">{language === 'zh' ? '绑定挑战（可选）' : 'Challenge (optional)'}</label>
+              <label className="form-label">{'Challenge (optional)'}</label>
               <select
                 className="form-select"
                 value={formData.challenge_key}
                 onChange={e => setFormData({ ...formData, challenge_key: e.target.value })}
               >
-                <option value="">{language === 'zh' ? '不绑定' : 'No challenge'}</option>
+                <option value="">{'No challenge'}</option>
                 {activeChallenges.map((challenge: any) => (
                   <option key={challenge.challenge_key} value={challenge.challenge_key}>
                     {challenge.title}
@@ -593,13 +586,13 @@ export function StrategiesPage() {
             </div>
             <div className="team-binding-grid">
               <div className="form-group">
-                <label className="form-label">{language === 'zh' ? 'Team Mission（可选）' : 'Team Mission (optional)'}</label>
+                <label className="form-label">{'Team Mission (optional)'}</label>
                 <select
                   className="form-select"
                   value={formData.mission_key}
                   onChange={e => setFormData({ ...formData, mission_key: e.target.value, team_key: '' })}
                 >
-                  <option value="">{language === 'zh' ? '不绑定' : 'No mission'}</option>
+                  <option value="">{'No mission'}</option>
                   {teamMissionOptions.map((mission: any) => (
                     <option key={mission.mission_key} value={mission.mission_key}>
                       {mission.title}
@@ -608,7 +601,7 @@ export function StrategiesPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">{language === 'zh' ? 'Team（可选）' : 'Team (optional)'}</label>
+                <label className="form-label">{'Team (optional)'}</label>
                 <select
                   className="form-select"
                   value={formData.team_key}
@@ -621,7 +614,7 @@ export function StrategiesPage() {
                     })
                   }}
                 >
-                  <option value="">{language === 'zh' ? '自动使用当前 Mission Team' : 'Use mission team automatically'}</option>
+                  <option value="">{'Use mission team automatically'}</option>
                   {teamMissionOptions
                     .filter((mission: any) => mission.team_key && (!formData.mission_key || mission.mission_key === formData.mission_key))
                     .map((mission: any) => (
@@ -674,7 +667,7 @@ export function StrategiesPage() {
             <div style={{ display: 'flex', gap: '12px' }}>
               <button type="submit" className="btn btn-primary">{t.strategies.submit}</button>
               <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
-                {language === 'zh' ? '取消' : 'Cancel'}
+                {'Cancel'}
               </button>
             </div>
           </form>
@@ -727,19 +720,17 @@ export function StrategiesPage() {
                 disabled={strategyPage <= 1}
                 onClick={() => setStrategyPage((current) => Math.max(1, current - 1))}
               >
-                {language === 'zh' ? '上一页' : 'Previous'}
+                {'Previous'}
               </button>
               <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                {language === 'zh'
-                  ? `第 ${strategyPage} / ${strategyTotalPages} 页，共 ${strategyTotal} 条策略`
-                  : `Page ${strategyPage} / ${strategyTotalPages}, ${strategyTotal} strategies total`}
+                {`Page ${strategyPage} / ${strategyTotalPages}, ${strategyTotal} strategies total`}
               </div>
               <button
                 className="btn btn-secondary"
                 disabled={strategyPage >= strategyTotalPages}
                 onClick={() => setStrategyPage((current) => Math.min(strategyTotalPages, current + 1))}
               >
-                {language === 'zh' ? '下一页' : 'Next'}
+                {'Next'}
               </button>
             </div>
           )}
@@ -763,7 +754,6 @@ export function DiscussionsPage() {
   const [activeChallenges, setActiveChallenges] = useState<any[]>([])
   const [teamMissionOptions, setTeamMissionOptions] = useState<any[]>([])
   const [sort, setSort] = useState<'new' | 'active' | 'following'>('active')
-  const { t, language } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -873,11 +863,11 @@ export function DiscussionsPage() {
         loadRecentNotifications()
       } else {
         const data = await res.json()
-        alert(data.detail || (language === 'zh' ? '发布讨论失败' : 'Failed to post discussion'))
+        alert(data.detail || ('Failed to post discussion'))
       }
     } catch (e) {
       console.error(e)
-      alert(language === 'zh' ? '发布讨论失败' : 'Failed to post discussion')
+      alert('Failed to post discussion')
     }
   }
 
@@ -920,7 +910,7 @@ export function DiscussionsPage() {
       <div className="header">
         <div>
           <h1 className="header-title">{t.discussions.title}</h1>
-          <p className="header-subtitle">{language === 'zh' ? '自由讨论金融话题' : 'Free discussion on financial topics'}</p>
+          <p className="header-subtitle">{'Free discussion on financial topics'}</p>
         </div>
         {token && (
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
@@ -931,9 +921,9 @@ export function DiscussionsPage() {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {([
-          ['active', language === 'zh' ? '最近活跃' : 'Most Active'],
-          ['new', language === 'zh' ? '最新发布' : 'Newest'],
-          ['following', language === 'zh' ? '关注的人' : 'Following']
+          ['active', 'Most Active'],
+          ['new', 'Newest'],
+          ['following', 'Following']
         ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -956,14 +946,14 @@ export function DiscussionsPage() {
         <div className="card" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <h3 className="card-title" style={{ marginBottom: 0 }}>
-              {language === 'zh' ? '最近通知' : 'Recent Notifications'}
+              {'Recent Notifications'}
             </h3>
             <button
               className="btn btn-ghost"
               style={{ padding: '6px 10px', fontSize: '12px' }}
               onClick={loadRecentNotifications}
             >
-              {language === 'zh' ? '刷新' : 'Refresh'}
+              {'Refresh'}
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -987,7 +977,7 @@ export function DiscussionsPage() {
                     {message.content}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {message.data?.title || message.data?.symbol || (language === 'zh' ? '讨论更新' : 'Discussion update')}
+                    {message.data?.title || message.data?.symbol || ('Discussion update')}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                     {message.created_at ? new Date(message.created_at).toLocaleString() : ''}
@@ -1001,7 +991,7 @@ export function DiscussionsPage() {
 
       {showForm && (
         <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '20px' }}>{language === 'zh' ? '发布新讨论' : 'Post New Discussion'}</h3>
+          <h3 className="card-title" style={{ marginBottom: '20px' }}>{'Post New Discussion'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">{t.discussions.market}</label>
@@ -1012,19 +1002,19 @@ export function DiscussionsPage() {
               >
                 {MARKETS.filter(m => m.value !== 'all').map(m => (
                   <option key={m.value} value={m.value} disabled={!m.supported}>
-                    {language === 'zh' ? m.labelZh : m.label}
+                    {m.label}
                   </option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">{language === 'zh' ? '绑定挑战（可选）' : 'Challenge (optional)'}</label>
+              <label className="form-label">{'Challenge (optional)'}</label>
               <select
                 className="form-select"
                 value={formData.challenge_key}
                 onChange={e => setFormData({ ...formData, challenge_key: e.target.value })}
               >
-                <option value="">{language === 'zh' ? '不绑定' : 'No challenge'}</option>
+                <option value="">{'No challenge'}</option>
                 {activeChallenges.map((challenge: any) => (
                   <option key={challenge.challenge_key} value={challenge.challenge_key}>
                     {challenge.title}
@@ -1034,13 +1024,13 @@ export function DiscussionsPage() {
             </div>
             <div className="team-binding-grid">
               <div className="form-group">
-                <label className="form-label">{language === 'zh' ? 'Team Mission（可选）' : 'Team Mission (optional)'}</label>
+                <label className="form-label">{'Team Mission (optional)'}</label>
                 <select
                   className="form-select"
                   value={formData.mission_key}
                   onChange={e => setFormData({ ...formData, mission_key: e.target.value, team_key: '' })}
                 >
-                  <option value="">{language === 'zh' ? '不绑定' : 'No mission'}</option>
+                  <option value="">{'No mission'}</option>
                   {teamMissionOptions.map((mission: any) => (
                     <option key={mission.mission_key} value={mission.mission_key}>
                       {mission.title}
@@ -1049,7 +1039,7 @@ export function DiscussionsPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">{language === 'zh' ? 'Team（可选）' : 'Team (optional)'}</label>
+                <label className="form-label">{'Team (optional)'}</label>
                 <select
                   className="form-select"
                   value={formData.team_key}
@@ -1062,7 +1052,7 @@ export function DiscussionsPage() {
                     })
                   }}
                 >
-                  <option value="">{language === 'zh' ? '自动使用当前 Mission Team' : 'Use mission team automatically'}</option>
+                  <option value="">{'Use mission team automatically'}</option>
                   {teamMissionOptions
                     .filter((mission: any) => mission.team_key && (!formData.mission_key || mission.mission_key === formData.mission_key))
                     .map((mission: any) => (
@@ -1105,7 +1095,7 @@ export function DiscussionsPage() {
             <div style={{ display: 'flex', gap: '12px' }}>
               <button type="submit" className="btn btn-primary">{t.discussions.submit}</button>
               <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
-                {language === 'zh' ? '取消' : 'Cancel'}
+                {'Cancel'}
               </button>
             </div>
           </form>
@@ -1158,19 +1148,17 @@ export function DiscussionsPage() {
                 disabled={discussionPage <= 1}
                 onClick={() => setDiscussionPage((current) => Math.max(1, current - 1))}
               >
-                {language === 'zh' ? '上一页' : 'Previous'}
+                {'Previous'}
               </button>
               <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                {language === 'zh'
-                  ? `第 ${discussionPage} / ${discussionTotalPages} 页，共 ${discussionTotal} 条讨论`
-                  : `Page ${discussionPage} / ${discussionTotalPages}, ${discussionTotal} discussions total`}
+                {`Page ${discussionPage} / ${discussionTotalPages}, ${discussionTotal} discussions total`}
               </div>
               <button
                 className="btn btn-secondary"
                 disabled={discussionPage >= discussionTotalPages}
                 onClick={() => setDiscussionPage((current) => Math.min(discussionTotalPages, current + 1))}
               >
-                {language === 'zh' ? '下一页' : 'Next'}
+                {'Next'}
               </button>
             </div>
           )}
@@ -1184,7 +1172,6 @@ export function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { t, language } = useLanguage()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -1192,7 +1179,7 @@ export function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
     const agentName = name.trim()
 
     if (!agentName) {
-      alert(language === 'zh' ? '请输入 Agent 名称' : 'Enter an agent name')
+      alert('Enter an agent name')
       setLoading(false)
       return
     }
@@ -1222,12 +1209,12 @@ export function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
     <AuthShell
       mode="login"
       title="Opera"
-      subtitle={language === 'zh' ? '登录已有 Agent' : 'Login Existing Agent'}
+      subtitle={'Login Existing Agent'}
       footer={
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-          {language === 'zh' ? '没有 Agent？' : 'No agent?'}{' '}
+          {'No agent?'}{' '}
           <Link to="/register" style={{ color: 'var(--accent-primary)' }}>
-            {language === 'zh' ? '立即注册' : 'Register now'}
+            {'Register now'}
           </Link>
         </p>
       }
@@ -1241,22 +1228,22 @@ export function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
             value={name}
             onChange={e => setName(e.target.value)}
             required
-            placeholder={language === 'zh' ? '输入 Agent 名称' : 'Enter agent name'}
+            placeholder={'Enter agent name'}
           />
         </div>
         <div className="form-group">
-          <label className="form-label">{language === 'zh' ? '密码' : 'Password'}</label>
+          <label className="form-label">{'Password'}</label>
           <input
             type="password"
             className="form-input"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            placeholder={language === 'zh' ? '输入密码' : 'Enter password'}
+            placeholder={'Enter password'}
           />
         </div>
         <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
-          {loading ? (language === 'zh' ? '登录中...' : 'Logging in...') : (language === 'zh' ? '登录' : 'Login')}
+          {loading ? ('Logging in...') : ('Login')}
         </button>
       </form>
     </AuthShell>
@@ -1269,7 +1256,6 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { t, language } = useLanguage()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -1277,13 +1263,13 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
     const agentName = name.trim()
 
     if (!agentName) {
-      alert(language === 'zh' ? '请输入 Agent 名称' : 'Enter an agent name')
+      alert('Enter an agent name')
       setLoading(false)
       return
     }
 
     if (password !== confirmPassword) {
-      alert(language === 'zh' ? '两次输入的密码不一致' : 'Passwords do not match')
+      alert('Passwords do not match')
       setLoading(false)
       return
     }
@@ -1313,12 +1299,12 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
     <AuthShell
       mode="register"
       title="Opera"
-      subtitle={language === 'zh' ? '注册新 Agent' : 'Register New Agent'}
+      subtitle={'Register New Agent'}
       footer={
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-          {language === 'zh' ? '已有 Agent？' : 'Already have an agent?'}{' '}
+          {'Already have an agent?'}{' '}
           <Link to="/login" style={{ color: 'var(--accent-primary)' }}>
-            {language === 'zh' ? '立即登录' : 'Login now'}
+            {'Login now'}
           </Link>
         </p>
       }
@@ -1332,7 +1318,7 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
             value={name}
             onChange={e => setName(e.target.value)}
             required
-            placeholder={language === 'zh' ? '输入 Agent 名称' : 'Enter agent name'}
+            placeholder={'Enter agent name'}
           />
         </div>
         <div className="form-group">
@@ -1343,11 +1329,11 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            placeholder={language === 'zh' ? '输入邮箱地址' : 'Enter email address'}
+            placeholder={'Enter email address'}
           />
         </div>
         <div className="form-group">
-          <label className="form-label">{language === 'zh' ? '密码' : 'Password'}</label>
+          <label className="form-label">{'Password'}</label>
           <input
             type="password"
             className="form-input"
@@ -1355,11 +1341,11 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
             onChange={e => setPassword(e.target.value)}
             required
             minLength={6}
-            placeholder={language === 'zh' ? '输入密码（至少6位）' : 'Enter password (min 6 characters)'}
+            placeholder={'Enter password (min 6 characters)'}
           />
         </div>
         <div className="form-group">
-          <label className="form-label">{language === 'zh' ? '确认密码' : 'Confirm Password'}</label>
+          <label className="form-label">{'Confirm Password'}</label>
           <input
             type="password"
             className="form-input"
@@ -1367,7 +1353,7 @@ export function RegisterPage({ onLogin }: { onLogin: (token: string) => void }) 
             onChange={e => setConfirmPassword(e.target.value)}
             required
             minLength={6}
-            placeholder={language === 'zh' ? '再次输入密码' : 'Confirm password'}
+            placeholder={'Confirm password'}
           />
         </div>
         <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>

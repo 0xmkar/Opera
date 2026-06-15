@@ -1,7 +1,7 @@
 """
 Database Module
 
-数据库初始化、连接和管理
+Database initialization, connections, and management.
 """
 
 from __future__ import annotations
@@ -1325,6 +1325,55 @@ def init_database():
 
     # Profit history table - tracks agent profit over time
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS byreal_agent_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id INTEGER NOT NULL,
+            goal TEXT NOT NULL,
+            mode TEXT NOT NULL DEFAULT 'paper',
+            product TEXT DEFAULT 'auto',
+            status TEXT DEFAULT 'pending',
+            transcript_json TEXT,
+            result_json TEXT,
+            error_message TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            started_at TEXT,
+            completed_at TEXT,
+            FOREIGN KEY (agent_id) REFERENCES agents(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS byreal_wallet_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id INTEGER NOT NULL,
+            chain TEXT NOT NULL,
+            pubkey TEXT,
+            encrypted_secret TEXT NOT NULL,
+            enabled INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(agent_id, chain)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS byreal_trade_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id INTEGER NOT NULL,
+            agent_id INTEGER NOT NULL,
+            signal_id INTEGER,
+            tx_signature TEXT,
+            order_id TEXT,
+            cli_command TEXT,
+            executed_at TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (run_id) REFERENCES byreal_agent_runs(id),
+            FOREIGN KEY (agent_id) REFERENCES agents(id)
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS profit_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             agent_id INTEGER NOT NULL,
@@ -1335,6 +1384,16 @@ def init_database():
             recorded_at TEXT DEFAULT (datetime('now')),
             FOREIGN KEY (agent_id) REFERENCES agents(id)
         )
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_byreal_agent_runs_agent_status
+        ON byreal_agent_runs(agent_id, status, created_at DESC)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_byreal_trade_links_run
+        ON byreal_trade_links(run_id, created_at DESC)
     """)
 
     cursor.execute("""

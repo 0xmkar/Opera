@@ -7,7 +7,6 @@ import {
   ExchangePage,
   FinancialEventsPage,
   LandingPage,
-  LanguageContext,
   LoginPage,
   type NotificationCounts,
   NOTIFICATION_POLL_INTERVAL,
@@ -26,11 +25,11 @@ import {
   DiscussionsPage,
   LeaderboardPage,
 } from './AppPages'
+import { ByrealAgentPage } from './ByrealAgentPage'
 import { ChallengePage } from './ChallengePage'
 import { ExperimentAdminPage } from './ExperimentAdminPage'
 import { ResearchExportsPage } from './ResearchExportsPage'
 import { TeamMissionsPage } from './TeamMissionsPage'
-import { Language, getT } from './i18n'
 import { hasPermission } from './appShared'
 
 const DISCUSSION_NOTIFICATION_TYPES = new Set([
@@ -59,7 +58,6 @@ const EXPERIMENT_NOTIFICATION_TYPES = new Set([
 
 
 function App() {
-  const [language, setLanguage] = useState<Language>('zh')
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const savedTheme = localStorage.getItem('opera_theme')
     return savedTheme === 'light' ? 'light' : 'dark'
@@ -69,8 +67,6 @@ function App() {
   const [agentInfoLoading, setAgentInfoLoading] = useState(Boolean(localStorage.getItem('claw_token')))
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
   const [notificationCounts, setNotificationCounts] = useState<NotificationCounts>({ discussion: 0, strategy: 0, experiment: 0 })
-
-  const t = getT(language)
 
   const login = (newToken: string) => {
     localStorage.setItem('claw_token', newToken)
@@ -196,8 +192,7 @@ function App() {
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
-      <LanguageContext.Provider value={{ language, setLanguage, t }}>
-        <BrowserRouter>
+      <BrowserRouter>
           <AppRouter
             token={token}
             agentInfo={agentInfo}
@@ -217,7 +212,6 @@ function App() {
             />
           )}
         </BrowserRouter>
-      </LanguageContext.Provider>
     </ThemeContext.Provider>
   )
 }
@@ -284,6 +278,7 @@ function AppRouter({
             <Route path="/teams/:teamKey" element={permissionLoading ? permissionLoadingView : canUseTeamMissionAdmin ? <TeamMissionsPage token={token} canAdmin={canUseTeamMissionAdmin} /> : <Navigate to="/market" replace />} />
             <Route path="/experiments" element={permissionLoading ? permissionLoadingView : canUseExperiments ? <ExperimentAdminPage token={token} /> : <Navigate to="/market" replace />} />
             <Route path="/research-exports" element={permissionLoading ? permissionLoadingView : canUseResearchExports && token ? <ResearchExportsPage token={token} /> : <Navigate to="/market" replace />} />
+            <Route path="/byreal" element={token ? <ByrealAgentPage token={token} /> : <Navigate to="/login" replace />} />
             <Route path="/financial-events" element={<FinancialEventsPage />} />
             <Route path="/copytrading" element={token ? <CopyTradingPage token={token} /> : <Navigate to="/login" replace />} />
             <Route path="/strategies" element={<StrategiesPage />} />

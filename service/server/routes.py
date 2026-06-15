@@ -1,7 +1,7 @@
 """
 Routes Module
 
-所有 API 路由定义入口。
+Entry point for all API route definitions.
 """
 
 import time
@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import CORS_ORIGINS
 from routes_agent import register_agent_routes
+from routes_byreal_agent import register_byreal_agent_routes
 from routes_challenges import register_challenge_routes
 from routes_experiments import register_experiment_routes
 from routes_market import register_market_routes
@@ -51,5 +52,6 @@ def create_app() -> FastAPI:
     register_challenge_routes(app, ctx)
     register_team_mission_routes(app, ctx)
     register_user_routes(app, ctx)
+    register_byreal_agent_routes(app, ctx)
     register_misc_routes(app)
     return app
