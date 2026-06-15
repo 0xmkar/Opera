@@ -84,9 +84,13 @@ python3 -m pytest research/tests/
 
 ## Scaffold Phase
 
-Several suites under `tests/` are marked `@skip` pending staging fixture parity
-(OPERA-REL-2.4). This is intentional: tests document intended behavior and gate
-criteria without blocking local development or existing CI paths.
+**T1 integration (`tests/integration/`) is enabled** — 16 cross-module tests run against ephemeral SQLite + in-process FastAPI. Run:
+
+```bash
+python3 -m pytest tests/integration/ -c tests/pytest.ini
+```
+
+Other suites (contract, e2e, security, performance, and many unit stubs) remain `@skip` pending staging fixture parity (OPERA-REL-2.4). Those document intended behavior without blocking local development.
 
 ## Byreal Integration Contract Tests
 

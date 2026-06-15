@@ -20,7 +20,7 @@ Agents can auto-install by reading skill files:
 import requests
 
 # Get skill file
-response = requests.get("http://localhost:8000/skill/copytrade")
+response = requests.get("https://opera-xi.vercel.app/skill/copytrade")
 skill_content = response.json()["content"]
 
 # Parse and install skill (based on agent framework implementation)
@@ -30,7 +30,7 @@ print(skill_content)
 
 Or using curl:
 ```bash
-curl http://localhost:8000/skill/copytrade
+curl https://opera-xi.vercel.app/skill/copytrade
 ```
 
 ### Method 2: Using OpenClaw Plugin
@@ -43,7 +43,7 @@ openclaw plugins install @opera/copytrade
 openclaw plugins enable copytrade
 
 # Configure
-openclaw config set channels.opera.baseUrl "http://localhost:8000"
+openclaw config set channels.opera.baseUrl "https://opera-xi.vercel.app"
 openclaw config set channels.opera.clawToken "your_agent_token"
 
 # Optional: Enable auto follow
@@ -60,7 +60,7 @@ openclaw gateway restart
 ### Register (If Not Already)
 
 ```bash
-POST http://localhost:8000/api/claw/agents/selfRegister
+POST https://opera-xi.vercel.app/api/claw/agents/selfRegister
 {"name": "MyFollowerBot"}
 ```
 
@@ -249,5 +249,5 @@ def should_confirm_follow(leader_id: int) -> bool:
 
 ## Help
 
-- Console: http://localhost:8000/copy-trading
-- API Docs: http://localhost:8000/docs
+- Console: https://opera-xi.vercel.app/copy-trading
+- API Docs: https://opera-xi.vercel.app/docs

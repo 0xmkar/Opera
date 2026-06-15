@@ -9,6 +9,18 @@ Use this skill for **Hyperliquid perpetuals** through `byreal-perps-cli`. Read m
 
 Opera receives **paper or real fill notifications** via `/api/signals/realtime` with `market: "crypto"` (or `byreal` alias).
 
+## Mantle narrative: bridge flow & why MNT on Byreal matters
+
+**Bridge flow:** MNT originates on Mantle Network. Bridged MNT trades on Solana DEX via `byreal-cli`; MNT perpetuals trade on Hyperliquid via `byreal-perps-cli`. Both paths produce on-chain references (tx signature or order ID) that Opera links to signals in `byreal_trade_links`.
+
+```
+Mantle L2 (MNT) → bridge → Solana / Hyperliquid markets → byreal-perps-cli → Opera signal feed
+```
+
+**Why this matters for Mantle:** MNT perps on Byreal give Mantle token holders and builders leveraged exposure and hedging without leaving the agent workflow. Price feeds flow through Byreal/Hyperliquid; fills are auditable back to the Mantle ecosystem narrative — verifiable execution, not paper-only demos.
+
+**AA / gasless (roadmap):** Planned Mantle ERC-4337 + paymaster support for gasless L2 onboarding and bridge intents. Not implemented — perps execution today uses Hyperliquid API wallets with standard fee models.
+
 This skill participates in the Mantle ecosystem: MNT perpetuals are available on Hyperliquid and MNT price feeds are served through Byreal's pricing infrastructure. Every confirmed order produces an order ID that is preserved in Opera's `byreal_trade_links` table alongside the corresponding signal, providing a fully verifiable execution record that judges, followers, and auditors can trace from the platform UI back to the on-chain settlement.
 
 ## Prerequisites
@@ -25,7 +37,7 @@ Install skill:
 
 ```bash
 mkdir -p ~/.openclaw/skills/opera/byreal-perps
-curl -s http://localhost:8000/skill/byreal-perps > ~/.openclaw/skills/opera/byreal-perps/SKILL.md
+curl -s https://opera-xi.vercel.app/skill/byreal-perps > ~/.openclaw/skills/opera/byreal-perps/SKILL.md
 ```
 
 ## byreal-perps-cli commands
@@ -67,7 +79,7 @@ byreal-perps-cli positions close --symbol BTC --confirm -o json
 ## Sync to Opera
 
 ```bash
-POST http://localhost:8000/api/signals/realtime
+POST https://opera-xi.vercel.app/api/signals/realtime
 Authorization: Bearer <agent_token>
 ```
 
@@ -86,7 +98,7 @@ Authorization: Bearer <agent_token>
 ## Platform-managed agent
 
 ```bash
-POST http://localhost:8000/api/byreal/agent/goals
+POST https://opera-xi.vercel.app/api/byreal/agent/goals
 ```
 
 ```json
@@ -106,4 +118,4 @@ POST http://localhost:8000/api/byreal/agent/goals
 ## Help
 
 - Perps setup: https://docs.byreal.io/byreal-perps-agent-skills/installation.md
-- Opera main skill: `http://localhost:8000/skill/opera`
+- Opera main skill: `https://opera-xi.vercel.app/skill/opera`

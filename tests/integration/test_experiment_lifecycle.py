@@ -1,95 +1,143 @@
 """
 OPERA-TEST-2005 | integration.experiment_lifecycle
-====================================================
-
-Risk tier: P1 — broken experiment flow invalidates product analytics.
-
-Flow under test:
-  1. Admin creates experiment (routes_experiments)
-  2. Agent assigned to cohort (experiments.py)
-  3. Event recorded (experiment_events.py)
-  4. Notification dispatched (experiment_notifications.py)
-
-Owner: Data Platform / Experiments
-Gate: T1 (integration shard)
-
-Preconditions:
-  - Fixture: tests/fixtures/experiment_scenarios/ab_assignment_cohort.json
-  - Admin API token with experiment:write scope
-
-Related: service/server/tests/test_experiment_*.py
 """
 
 from __future__ import annotations
 
 import json
-import sys
 import unittest
 from pathlib import Path
 
 import pytest
 
+from tests.integration._harness import IntegrationHarness
+
 TESTS_DIR = Path(__file__).resolve().parents[1]
-REPO_ROOT = TESTS_DIR.parent
-SERVER_DIR = REPO_ROOT / "service" / "server"
 FIXTURES_DIR = TESTS_DIR / "fixtures"
 
 
-def _bootstrap() -> None:
-    server_str = str(SERVER_DIR)
-    if server_str not in sys.path:
-        sys.path.insert(0, server_str)
-
-
 @pytest.mark.integration
-class TestExperimentLifecycle(unittest.TestCase):
-    """
-    OPERA-TEST-2005-A | Register → assign → event → notification chain.
-
-    End-to-end validation that experiment state machine transitions are
-    atomic and notification fan-out respects cohort boundaries.
-    """
-
+class TestExperimentLifecycle(IntegrationHarness, unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         path = FIXTURES_DIR / "experiment_scenarios" / "ab_assignment_cohort.json"
         cls.cohort_fixture = json.loads(path.read_text(encoding="utf-8"))
 
-    @unittest.skip("Gate T1 — awaiting staging fixture parity (OPERA-REL-2.4)")
     def test_create_experiment_and_assign_agents_to_cohorts(self) -> None:
-        # Arrange: POST experiment from cohort_fixture metadata
+        from experiments import assign_unit_to_experiment, create_experiment, get_experiment_assignments
 
-        # Act: bulk assign agent_ids to control/treatment
+        meta = self.cohort_fixture
+        create_experiment({
+            "experiment_key": meta["experiment_id"],
+            "title": meta["name"],
+            "variants_json": [
+                {"key": "control", "weight": 1},
+                {"key": "treatment", "weight": 1},
+            ],
+        })
+        agents = [self.create_agent(f"cohort-agent-{idx}") for idx in range(6)]
 
-        # Assert: assignment rows match fixture allocation_pct
-        pass
+        for agent in agents:
+            assign_unit_to_experiment(meta["experiment_id"], "agent", agent["id"])
 
-    @unittest.skip("Gate T1 — awaiting staging fixture parity (OPERA-REL-2.4)")
+        assignments = get_experiment_assignments(meta["experiment_id"])
+        self.assertEqual(len(assignments["assignments"]), len(agents))
+        variants = {row["variant_key"] for row in assignments["assignments"]}
+        self.assertTrue({"control", "treatment"}.issubset(variants))
+
     def test_experiment_event_recorded_with_correct_cohort_tag(self) -> None:
-        # Arrange: treatment agent 201 assigned
+        from experiment_events import record_event
+        from experiments import assign_unit_to_experiment, create_experiment
 
-        # Act: POST experiment event (click_through) for agent 201
+        experiment_key = "event-cohort-tag"
+        create_experiment({
+            "experiment_key": experiment_key,
+            "title": "Cohort tag events",
+            "variants_json": [{"key": "control", "weight": 1}, {"key": "treatment", "weight": 1}],
+        })
+        treatment_agent = self.create_agent("treatment-agent-201")
+        assignment = assign_unit_to_experiment(experiment_key, "agent", treatment_agent["id"])
+        self.assertEqual(assignment["variant_key"], "treatment")
 
-        # Assert: event.cohort_id=treatment; not visible in control rollup
-        pass
+        record_event(
+            "notification_click_through",
+            actor_agent_id=treatment_agent["id"],
+            experiment_key=experiment_key,
+            variant_key=assignment["variant_key"],
+            metadata={"surface": "integration-test"},
+        )
 
-    @unittest.skip("Gate T1 — awaiting staging fixture parity (OPERA-REL-2.4)")
+        conn = self.database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT variant_key, event_type
+            FROM experiment_events
+            WHERE experiment_key = ? AND actor_agent_id = ?
+            """,
+            (experiment_key, treatment_agent["id"]),
+        )
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+
+        self.assertTrue(any(row["event_type"] == "notification_click_through" for row in rows))
+        self.assertTrue(all(row["variant_key"] == "treatment" for row in rows))
+
     def test_notification_created_on_assignment(self) -> None:
-        # Arrange: newly assigned agent 102
+        from experiments import assign_unit_to_experiment, create_experiment
 
-        # Act: trigger assignment webhook / internal notification job
+        experiment_key = "assignment-notify"
+        create_experiment({
+            "experiment_key": experiment_key,
+            "title": "Assignment notification",
+            "variants_json": [{"key": "control", "weight": 1}, {"key": "treatment", "weight": 1}],
+        })
+        agent = self.create_agent("notify-agent-102")
+        assign_unit_to_experiment(experiment_key, "agent", agent["id"])
 
-        # Assert: unread notice exists; GET /api/experiments/notices returns it
-        pass
+        conn = self.database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT event_type, experiment_key, variant_key
+            FROM experiment_events
+            WHERE actor_agent_id = ? AND experiment_key = ?
+            """,
+            (agent["id"], experiment_key),
+        )
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
 
-    @unittest.skip("Gate T1 — awaiting staging fixture parity (OPERA-REL-2.4)")
+        self.assertTrue(any(row["event_type"] == "experiment_assigned" for row in rows))
+
     def test_experiment_pause_stops_new_assignments(self) -> None:
-        # Arrange: active experiment
+        from experiments import ExperimentError, assign_unit_to_experiment, create_experiment, update_experiment_status
 
-        # Act: PATCH status=paused; attempt new assignment
+        experiment_key = "pause-guard"
+        create_experiment({
+            "experiment_key": experiment_key,
+            "title": "Pause guard",
+            "variants_json": [{"key": "control", "weight": 1}, {"key": "treatment", "weight": 1}],
+        })
+        first_agent = self.create_agent("pause-agent-1")
+        assign_unit_to_experiment(experiment_key, "agent", first_agent["id"])
 
-        # Assert: HTTP 409; no new assignment rows
-        pass
+        update_experiment_status(experiment_key, "paused")
+        second_agent = self.create_agent("pause-agent-2")
+
+        with self.assertRaises(ExperimentError) as ctx:
+            assign_unit_to_experiment(experiment_key, "agent", second_agent["id"])
+        self.assertIn("not active", str(ctx.exception).lower())
+
+        conn = self.database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) AS count FROM experiment_assignments WHERE experiment_key = ?",
+            (experiment_key,),
+        )
+        count = int(cursor.fetchone()["count"])
+        conn.close()
+        self.assertEqual(count, 1)
 
 
 if __name__ == "__main__":

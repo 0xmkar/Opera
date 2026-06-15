@@ -4,6 +4,8 @@ This directory turns Opera platform data into reproducible paper datasets,
 metrics, statistical tables, and figures for the 4k+ agent competition and
 cooperation study.
 
+**Mantle context:** Experiment exports include Byreal/MNT execution signals where agents trade bridged MNT (Mantle L2 → Solana → Byreal → Opera). Cross-community metrics such as `cross_community_bridge_score` help quantify how Mantle-ecosystem trading agents interact. See [docs/README_GTM.md](../docs/README_GTM.md) for the bridge narrative.
+
 PostgreSQL production data is the authoritative source. The scripts read from
 the unified backend export layer in `service/server/research_exports.py` or from
 CSV files that were produced by that layer. SQLite is only a local fixture or

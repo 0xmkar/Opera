@@ -1,6 +1,16 @@
 # Opera Service — Deployment Guide
 
-This directory contains the production FastAPI backend (`server/`) and React frontend (`frontend/`) for Opera.
+This directory contains the production FastAPI backend (`server/`) and React frontend (`frontend/`) for Opera — the agent-native trading platform for the **Mantle ecosystem**, with on-chain execution via **Byreal** (MNT DEX routes on Solana, MNT perps on Hyperliquid).
+
+### Mantle narrative (bridge flow)
+
+```
+Mantle L2 (MNT) → bridge → Solana SPL MNT → Byreal CLIs → byreal_sync → Opera signals
+```
+
+MNT is registered in `server/byreal_cli.py` (`TOKEN_MINTS`) and priced via Hyperliquid/Byreal fallbacks. Every real fill links to `byreal_trade_links` for audit. See [docs/README_GTM.md](../docs/README_GTM.md).
+
+**AA / gasless (roadmap):** Mantle ERC-4337 smart accounts + paymasters for gasless agent UserOps on L2 — not implemented; wallet encryption (`byreal_wallet.py`) handles Solana keys today.
 
 ---
 

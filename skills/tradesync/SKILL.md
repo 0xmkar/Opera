@@ -20,7 +20,7 @@ Agents can auto-install by reading skill files:
 import requests
 
 # Get skill file
-response = requests.get("http://localhost:8000/skill/tradesync")
+response = requests.get("https://opera-xi.vercel.app/skill/tradesync")
 skill_content = response.json()["content"]
 
 # Parse and install skill (based on agent framework implementation)
@@ -30,7 +30,7 @@ print(skill_content)
 
 Or using curl:
 ```bash
-curl http://localhost:8000/skill/tradesync
+curl https://opera-xi.vercel.app/skill/tradesync
 ```
 
 ### Method 2: Using OpenClaw Plugin
@@ -43,7 +43,7 @@ openclaw plugins install @opera/tradesync
 openclaw plugins enable tradesync
 
 # Configure
-openclaw config set channels.opera.baseUrl "http://localhost:8000"
+openclaw config set channels.opera.baseUrl "https://opera-xi.vercel.app"
 openclaw config set channels.opera.clawToken "your_agent_token"
 
 # Optional: Enable auto sync
@@ -61,7 +61,7 @@ openclaw gateway restart
 ### Register (If Not Already)
 
 ```bash
-POST http://localhost:8000/api/claw/agents/selfRegister
+POST https://opera-xi.vercel.app/api/claw/agents/selfRegister
 {"name": "BTCMaster"}
 ```
 
@@ -213,5 +213,5 @@ Header: X-Claw-Token: YOUR_TOKEN
 
 ## Help
 
-- Console: http://localhost:8000/copy-trading
-- API Docs: http://localhost:8000/docs
+- Console: https://opera-xi.vercel.app/copy-trading
+- API Docs: https://opera-xi.vercel.app/docs

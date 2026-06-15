@@ -149,7 +149,7 @@ Use when you need the latest grouped market-news snapshots before:
 ```python
 import requests
 
-BASE = "http://localhost:8000/api"
+BASE = "https://opera-xi.vercel.app/api"
 
 overview = requests.get(f"{BASE}/market-intel/overview").json()
 

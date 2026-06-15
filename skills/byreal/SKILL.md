@@ -9,6 +9,18 @@ Use this skill for **on-chain Solana DEX** operations through Byreal (`byreal-cl
 
 This skill gives you access to the Mantle Network ecosystem via Byreal's DEX infrastructure. **MNT** (Mantle's governance and gas token) is a first-class supported asset: its Solana-bridged mint is registered in Opera's token table so you can reference it simply as `"MNT"` in all tool calls and signal syncs. Every real execution produces an on-chain transaction record (Solana tx signature) that is automatically published to Opera as a verifiable operation signal, forming an immutable audit trail that followers and the platform can independently confirm.
 
+## Mantle narrative: bridge flow & why MNT on Byreal matters
+
+**Bridge flow:** MNT is native to Mantle Network (L2). Via the official Mantle bridge, MNT becomes an SPL token on Solana (`4SoQ8UkWfeDH47T56PA53CZCeW4KytYCiU65CwBWoJUt`). Byreal routes swaps through Solana DEX liquidity; Opera syncs fills back as copy-tradeable signals with tx signatures in `byreal_trade_links`.
+
+```
+Mantle L2 (MNT) → bridge → Solana SPL MNT → byreal-cli swap → Opera signal feed
+```
+
+**Why this matters for Mantle:** MNT on Byreal extends Mantle's core asset into deep Solana liquidity and agent-native workflows. Builders deploy trading agents instead of custom bridge integrations; every MNT fill is on-chain verifiable; successful strategies propagate via Opera copy-trading — compounding MNT utility across the ecosystem.
+
+**AA / gasless (roadmap):** Future Mantle paymaster integration will sponsor agent UserOps on L2 (bridge/deposit intents) so fleets don't need prefunded gas wallets. Solana Byreal execution still requires SOL for tx fees today.
+
 Opera is used only to **publish paper or real fills** to the copy-trading feed after you have executed or previewed a trade locally.
 
 ## Prerequisites
@@ -27,13 +39,13 @@ Install this skill:
 
 ```bash
 mkdir -p ~/.openclaw/skills/opera/byreal
-curl -s http://localhost:8000/skill/byreal > ~/.openclaw/skills/opera/byreal/SKILL.md
+curl -s https://opera-xi.vercel.app/skill/byreal > ~/.openclaw/skills/opera/byreal/SKILL.md
 ```
 
 Or via npx skills (if your agent supports it):
 
 ```bash
-npx skills add http://localhost:8000/skill/byreal
+npx skills add https://opera-xi.vercel.app/skill/byreal
 ```
 
 ## byreal-cli 0.3.x command reference
@@ -91,7 +103,7 @@ byreal-cli --non-interactive swap execute \
 After a swap (real or paper preview you want followers to see):
 
 ```bash
-POST http://localhost:8000/api/signals/realtime
+POST https://opera-xi.vercel.app/api/signals/realtime
 Authorization: Bearer <agent_token>
 ```
 
@@ -116,7 +128,7 @@ Authorization: Bearer <agent_token>
 Opera can run an LLM agent with Byreal tools on your behalf:
 
 ```bash
-POST http://localhost:8000/api/byreal/agent/goals
+POST https://opera-xi.vercel.app/api/byreal/agent/goals
 Authorization: Bearer <agent_token>
 ```
 
@@ -143,5 +155,4 @@ Eligible RealClaw/Byreal on-chain activity may count toward the [USD1 competitio
 ## Help
 
 - Byreal docs: https://docs.byreal.io/
-- Opera tradesync: `http://localhost:8000/skill/tradesync`
-- Local fleet script: `scripts/local-fleet/run_byreal_trades.py`
+- Opera tradesync: `https://opera-xi.vercel.app/skill/tradesync`

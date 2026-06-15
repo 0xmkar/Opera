@@ -6,31 +6,51 @@ Owner: Platform Engineering / QA Guild
 Last reviewed: 2026-06-15
 
 This conftest provides cross-cutting fixtures for the root `tests/` pyramid.
-It is intentionally side-effect free: fixtures either skip immediately or yield
-inert stubs so accidental collection does not mutate production state.
-
-Existing backend unit tests remain in service/server/tests/ and use their own
-bootstrap pattern. Do not merge the two trees without an OPERA-INFRA ticket.
-
-Fixture tiers:
-  - Tier A (session): path resolution, marker enforcement
-  - Tier B (function): DB, HTTP client, clock — all gated behind pytest.skip
+Integration-tier fixtures (`integration_db`, `api_client`) use ephemeral SQLite.
+Other gated fixtures (e.g. `frozen_clock`) remain skipped until wired.
 """
 
 from __future__ import annotations
 
+import os
 import sys
+import tempfile
+import types
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any, Generator
 
 import pytest
 
-# ---------------------------------------------------------------------------
-# Path resolution — read-only at import; no sys.path mutation until tests run
-# ---------------------------------------------------------------------------
+# Stub email_validator when absent so FastAPI route models import in CI/dev shells
+# that have not installed service/requirements.txt yet.
+try:
+    import email_validator  # noqa: F401
+except ImportError:
+    import importlib.metadata as _importlib_metadata
+
+    _email_stub = types.ModuleType("email_validator")
+
+    def _validate_email(email: str, **kwargs: Any) -> types.SimpleNamespace:
+        return types.SimpleNamespace(normalized=email)
+
+    _email_stub.validate_email = _validate_email
+    sys.modules["email_validator"] = _email_stub
+
+    _orig_distribution_version = _importlib_metadata.version
+
+    def _version(name: str) -> str:
+        if name == "email-validator":
+            return "2.0.0"
+        return _orig_distribution_version(name)
+
+    _importlib_metadata.version = _version  # type: ignore[method-assign]
+
+# Repo root on sys.path so `tests.integration.*` imports resolve.
 TESTS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = TESTS_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 SERVER_DIR = REPO_ROOT / "service" / "server"
 FRONTEND_SRC = REPO_ROOT / "service" / "frontend" / "src"
 RESEARCH_SCRIPTS = REPO_ROOT / "research" / "scripts"
@@ -60,30 +80,47 @@ def fixtures_dir() -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Function-scoped stubs — gated; no DB or network I/O
+# Integration-tier DB + HTTP client (T1 gate)
 # ---------------------------------------------------------------------------
 @pytest.fixture
-def mock_db_session() -> Generator[None, None, None]:
-    """
-    Placeholder for SQLAlchemy / raw connection session.
+def integration_db() -> Generator[Path, None, None]:
+    """Ephemeral SQLite database for cross-module integration tests."""
+    _bootstrap_server_path()
+    import database
 
-    Gate T1: requires ALLOW_SQLITE=true and ephemeral DB_PATH.
-    Skipped until staging fixture parity (OPERA-REL-2.4).
-    """
-    pytest.skip("Gate T1 — mock_db_session awaiting staging fixture parity (OPERA-REL-2.4)")
-    yield None  # pragma: no cover
+    tmp = tempfile.TemporaryDirectory()
+    database.DATABASE_URL = ""
+    database._SQLITE_DB_PATH = os.path.join(tmp.name, "integration.db")
+    os.environ["DATABASE_URL"] = ""
+    os.environ["DB_PATH"] = database._SQLITE_DB_PATH
+    os.environ["ALLOW_SQLITE"] = "true"
+    database.init_database()
+    yield Path(database._SQLITE_DB_PATH)
+    tmp.cleanup()
 
 
 @pytest.fixture
-def api_client() -> Generator[None, None, None]:
+def mock_db_session(integration_db: Path) -> Generator[Path, None, None]:
+    """
+    Ephemeral SQLite database path for integration-tier tests.
+
+    Enabled when tests/integration/conftest.py provisions integration_db.
+    """
+    yield integration_db
+
+
+@pytest.fixture
+def api_client(integration_db: Path) -> Generator[Any, None, None]:
     """
     FastAPI TestClient wrapper with auth header injection.
 
-    Gate T1: requires TEST_API_BASE_URL or in-process app factory.
-  Skipped until integration shard is enabled (OPERA-REL-2.4).
+    Requires tests/integration/conftest.py integration_db fixture.
     """
-    pytest.skip("Gate T1 — api_client awaiting integration shard (OPERA-REL-2.4)")
-    yield None  # pragma: no cover
+    _bootstrap_server_path()
+    from fastapi.testclient import TestClient
+    from routes import create_app
+
+    yield TestClient(create_app())
 
 
 @pytest.fixture
