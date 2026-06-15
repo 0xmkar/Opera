@@ -33,7 +33,7 @@ export function ByrealAgentPage({ token }: ByrealAgentPageProps) {
   const [walletStatus, setWalletStatus] = useState<Record<string, unknown> | null>(null)
   const pollRef = useRef<number | null>(null)
 
-  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+  const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
   const loadRuns = async () => {
     if (!token) return
