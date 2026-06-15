@@ -1,0 +1,24 @@
+{
+  "experiment_id": "exp-notif-v2-rollout",
+  "name": "Notification UX v2 — A/B Rollout",
+  "status": "active",
+  "cohorts": [
+    {
+      "cohort_id": "control",
+      "allocation_pct": 50,
+      "agent_ids": [101, 102, 103, 104, 105]
+    },
+    {
+      "cohort_id": "treatment",
+      "allocation_pct": 50,
+      "agent_ids": [201, 202, 203, 204, 205]
+    }
+  ],
+  "primary_metric": "notification_click_through_rate",
+  "secondary_metrics": [
+    "time_to_first_trade_post_assignment",
+    "experiment_unread_notice_dismiss_rate"
+  ],
+  "window_start": "2026-04-01T00:00:00Z",
+  "window_end": "2026-04-30T23:59:59Z"
+}

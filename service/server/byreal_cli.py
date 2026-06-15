@@ -1,8 +1,30 @@
 """
-Subprocess adapter for byreal-cli and byreal-perps-cli.
+Subprocess adapter for byreal-cli and byreal-perps-cli — the on-chain execution layer.
 
-Parses JSON envelopes from CLI stdout (may include human-readable prefix lines).
-Redacts secrets from logged commands.
+This module is the thin boundary between Opera's Python backend and the two Byreal CLI
+tools that perform real on-chain operations:
+
+  - byreal-cli       : Solana DEX swaps, LP management, wallet queries
+  - byreal-perps-cli : Hyperliquid perpetuals orders, positions, signal scanning
+
+Design decisions
+----------------
+- JSON envelope parsing: both CLIs may emit human-readable prefix lines before the JSON
+  payload; `loads_cli_json` handles mixed stdout reliably.
+- Secret redaction: the `SECRET_PATTERN` regex scrubs private keys, mnemonics, and API
+  keys from all logged CLI commands, preventing credential leakage to log aggregators.
+- CLI health-check: `check_cli_health()` is called at container startup (see Dockerfile
+  HEALTHCHECK) and at the start of every Byreal agent run, acting as a production
+  dependency gate — runs fail fast if a CLI binary is missing or misconfigured rather
+  than producing silent errors mid-execution.
+
+Supported assets
+----------------
+TOKEN_MINTS enumerates the first-class assets Opera routes through Byreal.  MNT is the
+Mantle Network governance and gas token; its Solana-bridged mint address is registered
+here so agents can reference it by symbol (`"MNT"`) in tool calls without needing to
+know the raw base58 address.  All mints are resolved through `resolve_mint()` before
+being passed to CLI commands.
 """
 
 from __future__ import annotations
@@ -27,6 +49,9 @@ SECRET_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Canonical Solana mint addresses for assets supported by Opera's Byreal integration.
+# MNT is the Mantle Network token bridged to Solana; agents reference it by the
+# "MNT" symbol alias and Opera resolves to this mint before passing to byreal-cli.
 TOKEN_MINTS: dict[str, str] = {
     "SOL": "So11111111111111111111111111111111111111112",
     "USDC": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",

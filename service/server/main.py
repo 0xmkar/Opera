@@ -1,14 +1,43 @@
 """
-Opera Backend Server
+Opera Backend Server — production-grade FastAPI application entrypoint.
+
+Deployment model
+----------------
+Opera separates API serving from background work into two independent OS processes:
+
+  API process  (this file, `main.py`):
+    - Handles all HTTP and WebSocket traffic with fast response times.
+    - Runs an optional in-process task scheduler when DISABLE_BACKGROUND_TASKS is unset
+      (suitable for single-process local development or low-traffic deployments).
+    - In production, background tasks are disabled here and delegated to the worker.
+
+  Worker process (`worker.py`):
+    - Runs background jobs at a safe cadence: price refresh, profit history, Polymarket
+      settlement, market intel, and pending Byreal agent runs.
+    - Fully decoupled from the API process — a slow price-fetch or long Byreal CLI call
+      never increases API latency or blocks health checks.
+
+This separation is a deliberate production-grade fault tolerance decision: the API
+remains responsive even if a background job hangs or the external price source is slow.
+
+Startup sequence
+----------------
+1. Rotating log file initialised (10 MB × 5 backups) — log aggregators can ingest
+   `logs/server.log` without risking disk exhaustion.
+2. `init_database()` runs schema migrations idempotently.
+3. FastAPI app created with all route modules registered.
+4. On `startup` event: database backend and cache are verified; trending cache is
+   warmed so the first user request is never a cold cache miss.
 
 Project layout:
 - config.py   : configuration and environment variables
 - database.py : database initialization and connections
 - utils.py    : shared utility helpers
-- tasks.py    : background tasks
+- tasks.py    : background tasks (API-side) and worker entry points
 - services.py : business logic services
-- routes.py   : API route definitions
-- main.py     : application entrypoint
+- routes.py   : API route definitions (registers all route modules)
+- main.py     : application entrypoint (this file)
+- worker.py   : standalone background worker process
 """
 
 import secrets
@@ -63,7 +92,16 @@ app = create_app()
 
 @app.on_event("startup")
 async def startup_event():
-    """Startup event - schedule background tasks."""
+    """Startup event — verify infrastructure and schedule background tasks.
+
+    Each check here is a production readiness gate:
+    - Database status confirms which backend is active (PostgreSQL vs SQLite) and
+      that schema migrations have completed.
+    - Cache status confirms Redis connectivity; the platform degrades gracefully to
+      in-process dicts if Redis is unavailable, so this is advisory rather than fatal.
+    - Trending cache warm-up ensures the first GET /api/signals/trending is served
+      from cache rather than triggering a full database aggregation.
+    """
     db_status = get_database_status()
     logger.info(
         "Database ready: backend=%s details=%s",
@@ -80,7 +118,6 @@ async def startup_event():
         cache_status.get("client_installed"),
         cache_status.get("last_error"),
     )
-    # Initialize trending cache
     logger.info("Initializing trending cache...")
     _update_trending_cache()
     if not background_tasks_enabled_for_api():

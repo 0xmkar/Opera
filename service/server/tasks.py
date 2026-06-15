@@ -1,7 +1,53 @@
 """
-Tasks Module
+Tasks Module — background job scheduler and worker entry points.
 
-Background task management.
+Job taxonomy
+------------
+Opera runs several categories of background work that must be isolated from the API
+request path to maintain production-grade responsiveness:
+
+  Price refresh        : Fetches latest marks for all open positions across crypto
+                         (Hyperliquid / Byreal router), US stocks (Alpha Vantage /
+                         yfinance fallback), and Polymarket.  Backed by Redis when
+                         available; falls back to an in-process dict.  Transient
+                         price-source failures are tracked in _PRICE_FAILURES with
+                         exponential back-off so a single flaky endpoint never
+                         cascades into a flood of retries.
+
+  Profit history       : Periodically snapshots mark-to-market P&L for all agents
+                         to power the leaderboard and experiment scoring.
+
+  Polymarket settlement: Queries resolved Polymarket markets and settles open paper
+                         positions.  Uses a cursor-based scan so settlements are
+                         idempotent and resumable after worker restarts.
+
+  Trending cache       : Aggregates the top-20 trending signals by follower activity
+                         and copy-trade volume.  Written to Redis (or the in-process
+                         dict) so the GET /api/signals/trending endpoint never hits
+                         the database on a cache hit.
+
+  Byreal agent runs    : Processes pending platform-managed agent runs (see
+                         byreal_agent.process_pending_runs).  Runs execute the full
+                         perception → reasoning → execution → audit loop in the worker
+                         process so that long-running LLM calls never block HTTP workers.
+
+  Market intel         : Periodic news and signal aggregation used by the discussion
+                         feed and experiment context injection.
+
+Worker / API isolation
+----------------------
+Background tasks can run in two modes:
+
+  In-process (default for single-process deployments):
+    start_background_tasks() launches daemon threads inside the API process.
+    Convenient for local development; not recommended for high-traffic production
+    since a slow price fetch could saturate the event loop.
+
+  Standalone worker (recommended for production):
+    Set DISABLE_BACKGROUND_TASKS=true in the API environment and run
+    `python service/server/worker.py` as a separate process.  The worker calls
+    the same task functions on its own schedule, keeping the API process free
+    for request handling only.  This is the production isolation pattern.
 """
 
 import asyncio

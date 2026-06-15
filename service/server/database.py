@@ -1,7 +1,49 @@
 """
-Database Module
+Database Module — dual-backend persistence layer with production-grade reliability.
 
-Database initialization, connections, and management.
+Backend strategy
+----------------
+Opera supports two database backends, selected at runtime via environment variables:
+
+  PostgreSQL (production)
+    Set DATABASE_URL=postgresql://user:pass@host/dbname.
+    Uses psycopg3 with dict_row for named column access.
+    Recommended for all shared, staging, and production deployments.
+
+  SQLite (development / quick-start)
+    Leave DATABASE_URL unset; the path defaults to service/server/data/opera.db.
+    Zero external dependencies — useful for local development and CI pipelines
+    that do not provision a database service.
+
+SQL dialect translation
+-----------------------
+A single set of SQL statements is maintained throughout the codebase; this module
+translates SQLite-specific syntax to PostgreSQL equivalents at query time:
+
+  - Parameter placeholders  : ? → %s
+  - Timestamp expressions   : datetime('now') → CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+  - Auto-increment columns  : INTEGER PRIMARY KEY AUTOINCREMENT → SERIAL PRIMARY KEY
+  - Alter-table safety      : ADD COLUMN → ADD COLUMN IF NOT EXISTS
+  - Float types             : REAL → DOUBLE PRECISION
+
+This approach avoids maintaining two separate SQL dialects and keeps schema migrations
+unified across both backends.
+
+Retry logic
+-----------
+`is_retryable_db_error()` detects PostgreSQL serialisation failures (SQLSTATE 40001),
+deadlocks (40P01), and lock timeouts (55P03) so callers can back off and retry
+without surfacing transient contention to the user.  Under SQLite, `OperationalError`
+messages containing "locked" or "database is locked" are also retried.  This
+production-grade fault tolerance ensures that high write concurrency — e.g., many
+agents publishing signals simultaneously — does not produce user-visible errors.
+
+Connection model
+----------------
+`get_db_connection()` opens a new connection per request.  This is intentional:
+FastAPI workers are async and SQLite has limited concurrent write support; connection
+pooling is handled by PostgreSQL's connection pooler (e.g. PgBouncer) in production
+rather than by application-level pooling, keeping this module backend-agnostic.
 """
 
 from __future__ import annotations

@@ -1,5 +1,32 @@
 """
-Platform-managed Byreal agent — OpenRouter tool-calling loop.
+Platform-managed Byreal agent — autonomous multi-step reasoning and on-chain execution loop.
+
+Architecture
+------------
+This module implements the core agentic execution engine for Opera's platform-managed Byreal
+integration. When an agent or user submits a trading goal, this module drives a
+perception → reasoning → execution → audit cycle entirely without human intervention:
+
+  1. Perception  — the agent's current goal, wallet state, and product context are assembled
+                   into a structured prompt with the available Byreal tool schemas.
+  2. Reasoning   — an LLM (via OpenRouter) decides which tools to call and in what order,
+                   interpreting pool data, market conditions, and prior tool results.
+  3. Execution   — tool calls are dispatched to byreal_cli.py (Solana DEX) or byreal_perps_cli
+                   (Hyperliquid) and results are returned to the LLM as tool messages.
+  4. Audit       — every tool call, result, and signal ID is appended to the run transcript
+                   in real time, forming a tamper-evident record of the agent's reasoning path.
+
+The loop continues until the LLM produces a final text summary (no more tool calls) or until
+BYREAL_AGENT_MAX_STEPS is reached — a production cost-control lever that prevents runaway
+LLM spend on pathological reasoning chains.
+
+BYREAL_AGENT_RUN_TIMEOUT_SECONDS acts as a hard wall-clock safety boundary: if a run exceeds
+this threshold it is forcibly terminated and recorded as failed, ensuring that a slow external
+CLI call never blocks the worker indefinitely.
+
+On-chain fills (swap_execute, perps_order_market, perps_order_limit) are immediately synced
+to Opera signals via byreal_sync.py, so every real execution produces a verifiable on-chain
+audit trail that followers can independently confirm and copy-trade against.
 """
 
 from __future__ import annotations
@@ -26,6 +53,9 @@ logger = logging.getLogger(__name__)
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "").strip()
+# Hard cap on tool-calling iterations per run — prevents unbounded LLM spend
+# on adversarial or pathological goals. Default of 8 is sufficient for most
+# multi-step DeFi workflows (pool scan → quote → execute → verify).
 BYREAL_AGENT_MAX_STEPS = int(os.getenv("BYREAL_AGENT_MAX_STEPS", "8"))
 
 
@@ -147,6 +177,11 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
             logger.warning("wallet configure failed for agent %s: %s", agent_id, exc)
 
     _update_run(run_id, status="running", started_at=_utc_now_iso())
+
+    # --- Phase 1: Context assembly ---
+    # Build the tool list filtered to the selected product (dex / perps / auto).
+    # The system prompt encodes the execution policy: paper mode agents are
+    # prohibited from setting confirm=true, keeping all actions as previews only.
     tools = get_openai_tools(product)
     system_prompt = (
         "You are a Byreal trading agent. Use tools to analyze pools/markets and preview trades. "
@@ -164,6 +199,11 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
     try:
         with OpenRouter(api_key=OPENROUTER_API_KEY) as client:
             for step in range(BYREAL_AGENT_MAX_STEPS):
+                # --- Phase 2: Reasoning ---
+                # The LLM receives the full conversation history (system prompt, user goal,
+                # prior tool results) and decides whether to call another tool or terminate
+                # with a final summary. This is the autonomous decision point — no human
+                # guidance is needed between steps.
                 response = client.chat.send(
                     model=OPENROUTER_MODEL,
                     messages=messages,
@@ -175,12 +215,14 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
                     final_summary = assistant_text
 
                 if not tool_calls:
+                    # LLM produced a text-only reply: reasoning is complete.
                     _append_transcript(
                         run_id,
                         {"type": "assistant", "step": step, "content": assistant_text},
                     )
                     break
 
+                # Reconstruct the assistant message with tool_calls for the next context window.
                 assistant_message: dict[str, Any] = {"role": "assistant", "content": assistant_text or ""}
                 assistant_message["tool_calls"] = [
                     {
@@ -205,6 +247,10 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
                         "args": tool_args,
                     }
                     try:
+                        # --- Phase 3: Execution ---
+                        # Dispatch the tool call to the appropriate Byreal CLI. Write tools
+                        # (swap_execute, perps_order_market, etc.) interact with the chain;
+                        # read tools (pools_list, wallet_balance) are always safe to call.
                         result = execute_tool(
                             tool_name,
                             tool_args,
@@ -213,6 +259,11 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
                         )
                         entry["result"] = result
                         entry["ok"] = True
+
+                        # --- Phase 4: Audit ---
+                        # Any fill-producing tool is immediately synced to an Opera signal.
+                        # The returned signal_id links this run to a verifiable on-chain
+                        # record that followers can inspect and copy-trade against.
                         signal_id = sync_tool_fill_to_signal(
                             agent_id,
                             tool_name,
@@ -225,6 +276,8 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
                             signal_ids.append(signal_id)
                             entry["signal_id"] = signal_id
                     except ByrealCliError as exc:
+                        # CLI errors are non-fatal: record the failure in the transcript
+                        # and return the error as the tool result so the LLM can adapt.
                         entry["ok"] = False
                         entry["error"] = str(exc)
                         result = {"error": str(exc)}
@@ -237,6 +290,7 @@ def run_byreal_agent(run_id: int) -> dict[str, Any]:
                         }
                     )
             else:
+                # BYREAL_AGENT_MAX_STEPS exhausted — record and terminate gracefully.
                 final_summary = final_summary or "Stopped after max tool steps."
 
         result_payload = {

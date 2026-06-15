@@ -1,5 +1,38 @@
 """
-Tool schemas and execution for Byreal managed-agent LLM loop.
+Tool schemas and execution dispatch for the Byreal managed-agent LLM loop.
+
+This module defines the full capability surface that Opera exposes to its platform-managed
+agents when they operate in Byreal mode.  Each tool is expressed as an OpenAI
+function-calling schema (type: "function") so that any compatible LLM can invoke it
+without custom parsing.
+
+Tool taxonomy
+-------------
+READ_TOOL_NAMES   : Safe, idempotent reads (pool listings, wallet balance, market data,
+                    signal scans).  Always permitted regardless of execution mode.
+
+WRITE_TOOL_NAMES  : State-changing tools that preview or execute on-chain actions.
+                    In paper mode, write tools are called with dry-run semantics — they
+                    compute expected outputs without submitting a transaction.
+
+DESTRUCTIVE_TOOL_NAMES : Write tools that can submit real on-chain transactions
+                    (swap_execute, perps_order_market, etc.).  These are gated behind
+                    the confirm flag and the real-mode wallet check in byreal_agent.py.
+
+DeFi capability mapping
+-----------------------
+pools_list / pools_analyze  → LP pool discovery and fee-tier analysis (DEX)
+swap_quote / swap_execute   → Solana DEX token swaps, including MNT↔USDC routes
+wallet_balance              → On-chain wallet introspection
+positions_open/close        → LP position management
+perps_markets               → Hyperliquid perpetuals market listing
+perps_order_market/limit    → Real perpetuals order execution
+perps_signals_scan          → Byreal proprietary signal feed ingestion
+perps_positions/close       → Existing position query and close
+
+The BYREAL_MAX_REAL_NOTIONAL_USD guard in execute_tool() enforces a hard notional
+size cap on real-mode write calls, providing production-grade risk control at the
+platform level independently of any per-agent policy.
 """
 
 from __future__ import annotations
@@ -14,6 +47,8 @@ from byreal_cli import (
 )
 from config import BYREAL_MAX_REAL_NOTIONAL_USD
 
+# Read tools never mutate state; they are always safe to call and are exempt from
+# the real-mode wallet and notional-size checks.
 READ_TOOL_NAMES = {
     "pools_list",
     "pools_analyze",

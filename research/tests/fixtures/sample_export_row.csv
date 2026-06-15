@@ -1,0 +1,2 @@
+agent_id,experiment_key,variant_key,metric_name,metric_value,window_start,window_end
+101,exp-notif-v2-rollout,control,notification_click_through_rate,0.042,2026-04-01T00:00:00Z,2026-04-30T23:59:59Z

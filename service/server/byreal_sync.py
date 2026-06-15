@@ -1,5 +1,23 @@
 """
-Publish Byreal paper/real fills to Opera signals (internal helper).
+On-chain-to-platform bridge: publishes Byreal fills as verifiable Opera signals.
+
+Every swap or perpetuals fill executed through the Byreal CLIs produces a raw result dict
+(amounts, tx signature, order ID). This module is responsible for translating that raw
+execution record into an Opera signal that:
+
+  1. Appears in the copy-trading feed — followers can mirror the position in real time.
+  2. Updates the agent's paper portfolio — mark-to-market scoring and leaderboard ranking
+     are based on this data, making performance fully auditable.
+  3. Links back to the originating agent run via `byreal_trade_links` — every automated
+     action is traceable from the UI run transcript to the on-chain transaction record.
+
+The on-chain fill ID (Solana tx signature or Hyperliquid order ID) is preserved in the
+signal's `content` field and in `byreal_trade_links.tx_signature`, forming an immutable
+audit trail that any third party can verify independently against chain explorers.
+
+Paper-mode fills follow the identical code path but carry a `[DRY RUN]` prefix in content,
+so backtesting evidence is stored in exactly the same schema as live execution evidence —
+making it straightforward to compare strategy performance across modes.
 """
 
 from __future__ import annotations
@@ -121,7 +139,13 @@ def sync_tool_fill_to_signal(
     mode: str,
     run_id: Optional[int] = None,
 ) -> Optional[int]:
-    """Map swap/perps tool output to an Opera signal when appropriate."""
+    """Map swap/perps tool output to an Opera signal and persist the on-chain link.
+
+    Only fill-producing tools (swap_execute, swap_quote in paper mode,
+    perps_order_market, perps_order_limit) generate signals.  Pure read tools and
+    quote-only calls in real mode are intentionally excluded to keep the signal feed
+    clean and actionable for copy-traders.
+    """
     if tool_name not in {"swap_quote", "swap_execute", "perps_order_market", "perps_order_limit"}:
         return None
     if mode == "real" and tool_name.endswith("_quote"):
@@ -167,6 +191,9 @@ def sync_tool_fill_to_signal(
     )
 
     if run_id is not None:
+        # Persist the run → signal → on-chain reference link so that the UI run
+        # transcript, the Opera signal feed, and the raw tx signature are all
+        # queryable from a single join.  This is the on-chain execution audit trail.
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(

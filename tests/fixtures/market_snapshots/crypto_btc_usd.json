@@ -1,0 +1,15 @@
+{
+  "symbol": "BTC",
+  "market": "crypto",
+  "quote_currency": "USD",
+  "price": 68420.50,
+  "bid": 68418.00,
+  "ask": 68423.00,
+  "timestamp": "2026-04-13T14:30:00Z",
+  "source": "aggregated",
+  "staleness_ms": 1200,
+  "metadata": {
+    "exchange_count": 4,
+    "volume_24h_usd": 28500000000
+  }
+}

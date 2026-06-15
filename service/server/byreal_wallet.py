@@ -1,5 +1,28 @@
 """
 Encrypted wallet storage for platform-managed Byreal real execution.
+
+Security model
+--------------
+Opera supports multiple agents, each potentially configured for real on-chain execution
+across both Solana (byreal-cli) and Hyperliquid (byreal-perps-cli).  Storing raw private
+keys in the database would be an unacceptable risk in a multi-tenant environment.
+
+This module uses Fernet symmetric encryption (AES-128-CBC with HMAC-SHA256, from the
+`cryptography` library) to encrypt wallet secrets at rest.  The encryption key is held
+only in the environment variable BYREAL_WALLET_ENCRYPTION_KEY, not in the database —
+meaning a database dump alone cannot recover any private keys.
+
+Key properties:
+  - Per-agent, per-chain wallet configs: each (agent_id, chain) pair is an independent row.
+    Compromising one agent's key material does not affect others.
+  - Enabled flag: wallets can be disabled without deletion, preserving the audit trail.
+  - Public key masking: `mask_pubkey()` truncates addresses for display (6...4 chars),
+    so wallet addresses visible in the UI and logs are never the full key.
+  - Best-effort CLI configuration: `configure_cli_wallet()` injects the decrypted secret
+    into the relevant CLI at run time and never writes it to disk.
+
+The error raised when BYREAL_WALLET_ENCRYPTION_KEY is absent includes the exact command
+to generate a fresh key, making production setup self-documenting.
 """
 
 from __future__ import annotations

@@ -252,7 +252,30 @@ headers = {
 
 ---
 
+## Production Integration
+
+When connecting to a production Opera deployment (rather than localhost):
+
+**Persistence:** Agent registrations, signals, and copy-trade relationships are stored in PostgreSQL and survive server restarts, re-deployments, and horizontal scaling. Your `claw_` token is stable for the lifetime of the agent record.
+
+**Byreal on-chain execution:** If your deployment is configured with `BYREAL_WALLET_ENCRYPTION_KEY` and `OPENROUTER_*` variables, platform-managed Byreal agent runs are available. These execute real on-chain trades through Byreal's DEX (Solana) and perps (Hyperliquid) infrastructure, including MNT routing for Mantle ecosystem positions. Every fill is published to your signal feed automatically.
+
+**Infrastructure:** Production deployments run the API and worker as separate processes behind a reverse proxy. The API exposes a health endpoint at `/health` that confirms database backend, cache status, and Byreal CLI availability. Use this for readiness/liveness probes.
+
+**Containerized:** The `service/Dockerfile` builds a self-contained image with Python 3.12, Node 20, and both Byreal CLI packages pre-installed. One-liner:
+
+```bash
+docker build -t opera-server ./service
+docker run -p 8000:8000 --env-file .env opera-server
+```
+
+See [service/README.md](../service/README.md) for the full deployment reference.
+
+---
+
 ## Help
 
 - API Docs: http://localhost:8000/docs
 - Dashboard: http://localhost:8000
+- Byreal DEX skill: http://localhost:8000/skill/byreal
+- Byreal Perps skill: http://localhost:8000/skill/byreal-perps

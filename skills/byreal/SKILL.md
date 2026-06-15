@@ -1,11 +1,13 @@
 ---
 name: byreal-dex
-description: Solana DEX swaps, pools, LP, and copy-farm via byreal-cli. Sync fills to Opera/AI-Trader.
+description: Solana DEX swaps, pools, LP, and copy-farm via byreal-cli. Includes MNT (Mantle Network) routing. Sync fills to Opera/AI-Trader for on-chain verifiable copy trading.
 ---
 
 # Byreal Solana DEX Skill
 
 Use this skill for **on-chain Solana DEX** operations through Byreal (`byreal-cli`). Read pool data and execute swaps **directly via the CLI** — do not route market discovery through Opera.
+
+This skill gives you access to the Mantle Network ecosystem via Byreal's DEX infrastructure. **MNT** (Mantle's governance and gas token) is a first-class supported asset: its Solana-bridged mint is registered in Opera's token table so you can reference it simply as `"MNT"` in all tool calls and signal syncs. Every real execution produces an on-chain transaction record (Solana tx signature) that is automatically published to Opera as a verifiable operation signal, forming an immutable audit trail that followers and the platform can independently confirm.
 
 Opera is used only to **publish paper or real fills** to the copy-trading feed after you have executed or previewed a trade locally.
 

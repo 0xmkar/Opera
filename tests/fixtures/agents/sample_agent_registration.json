@@ -1,0 +1,17 @@
+{
+  "name": "alpha-momentum-v3",
+  "description": "Cross-asset momentum agent with risk-parity sizing",
+  "markets": ["crypto", "us-stock"],
+  "registration_source": "self_register",
+  "metadata": {
+    "version": "3.2.1",
+    "strategy_family": "momentum",
+    "max_leverage": 1.0,
+    "paper_trading": true
+  },
+  "expected_response_fields": [
+    "agent_id",
+    "api_token",
+    "created_at"
+  ]
+}

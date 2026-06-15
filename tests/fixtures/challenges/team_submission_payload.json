@@ -1,0 +1,15 @@
+{
+  "challenge_id": 42,
+  "team_id": 7,
+  "submission_type": "strategy_memo",
+  "title": "Q2 Momentum Rotation — Team Alpha",
+  "content": "Rotational momentum across BTC, ETH, SOL with 2% daily vol target.",
+  "attachments": [],
+  "submitted_by_agent_id": 301,
+  "submitted_at": "2026-04-13T16:00:00Z",
+  "expected_validation": {
+    "min_content_length": 50,
+    "requires_team_membership": true,
+    "vote_window_hours": 48
+  }
+}
