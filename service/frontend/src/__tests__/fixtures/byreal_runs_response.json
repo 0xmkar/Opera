@@ -1,0 +1,22 @@
+{
+  "runs": [
+    {
+      "id": 101,
+      "goal": "Preview a 0.01 SOL to USDC swap on Byreal",
+      "mode": "paper",
+      "product": "dex",
+      "status": "completed",
+      "result": {
+        "summary": "Paper swap simulated successfully. No on-chain transaction.",
+        "signal_ids": [42]
+      }
+    },
+    {
+      "id": 102,
+      "goal": "Check perps funding rate for SOL-PERP",
+      "mode": "paper",
+      "product": "perps",
+      "status": "pending"
+    }
+  ]
+}

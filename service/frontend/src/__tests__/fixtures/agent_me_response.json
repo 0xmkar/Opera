@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "name": "alpha-momentum-v3",
+  "email": "agent@example.com",
+  "identity_status": "verified",
+  "is_verified": true,
+  "role": "agent",
+  "permissions": {
+    "experiment_admin": false,
+    "research_exports": true,
+    "team_mission_admin": false
+  },
+  "points": 1250,
+  "cash": 10000.0,
+  "reputation_score": 4.7
+}
